@@ -103,25 +103,38 @@ process decontaminate {
 	tuple val(sample), path(reads)
 
 	output:
-	tuple val(sample), path("${sample}/${sample}*.fastq.gz"), emit: decon_reads
+	tuple val(sample), path("${sample}/${sample}.decon_R?.fastq.gz"), optional: true, emit: decon_reads_p
+	tuple val(sample), path("${sample}/${sample}.decon_O*.fastq.gz"), optional: true, emit: decon_reads_s
 
 	script:
 	if (reads.size() == 2) {
 		"""
+		maxmem=\$(echo \"$task.memory\"| sed 's/ GB/g/g')
 		cpus=\$(expr \"$task.cpus\" - 4)
 		mkdir -p $sample
 
-		bwa mem -t \$cpus ${params.human_ref} ${sample}.merged_R1.fastq.gz ${sample}.merged_R2.fastq.gz | samtools collate -@ 2 -f -O - | samtools fastq -f 4 -0 ${sample}_decon_O.fastq.gz -1 ${sample}.decon_R1.fastq.gz -2 ${sample}.decon_R2.fastq.gz
-		mv *.fastq.gz $sample/
+		bwa mem -t \$cpus ${params.human_ref} ${sample}.merged_R1.fastq.gz ${sample}.merged_R2.fastq.gz | samtools view -buh -f 13 -F 0x900 - | samtools collate -@ 4 -O - | samtools fastq -0 ${sample}.decon_O.fastq.gz -1 ${sample}.decon_R1.fastq.gz -2 ${sample}.decon_R2.fastq.gz
+		mv *decon*.fastq.gz ${sample}/
 		"""
+
+		//bwa mem -t \$cpus ${params.human_ref} ${sample}.merged_R1.fastq.gz ${sample}.merged_R2.fastq.gz | samtools view -buh -f 13 -F 0x900 - | samtools collate -@ 4 -o decon.bam - 
+		//reformat.sh -Xmx\$maxmem t=$task.cpus in=decon.bam out=${sample}/${sample}.decon_R1.fastq.gz out2=${sample}/${sample}.decon_R2.fastq.gz unpairedonly=t primaryonly=t deleteinput=t allowidenticalnames=t unmappedonly=t
+		// bwa mem -t \$cpus ${params.human_ref} ${sample}.merged_R1.fastq.gz ${sample}.merged_R2.fastq.gz | samtools collate -@ 2 -f -O - | samtools fastq -f 4 -0 ${sample}_decon_O.fastq.gz -1 ${sample}.decon_R1.fastq.gz -2 ${sample}.decon_R2.fastq.gz
+		//mv *decon*.fastq.gz $sample/
 	} else {
+		def single_suffix = (reads.name.endsWith("merged_M.fastq.gz")) ? "decon_Om" : "decon_Os";
 		"""
+		maxmem=\$(echo \"$task.memory\"| sed 's/ GB/g/g')
 		cpus=\$(expr \"$task.cpus\" - 4)
 		mkdir -p $sample
 
-		bwa mem -t \$cpus ${params.human_ref} ${reads} | samtools collate -@ 2 -f -O - | samtools fastq -f 4 -s ${sample}_decon_O.fastq.gz
-		mv *.fastq.gz $sample/
-		"""
+		bwa mem -t \$cpus ${params.human_ref} ${reads} | samtools view -buh -f 4 -F 0x900 - | samtools collate -@ 4 -O - | samtools fastq -0 ${sample}.${single_suffix}.fastq.gz
+		mv *decon*.fastq.gz ${sample}/
+		"""	
+		//bwa mem -t \$cpus ${params.human_ref} ${reads} | samtools view -buh -F 0x900 - | samtools collate -@ 4 -o decon.bam -
+		//reformat.sh -Xmx\$maxmem t=$task.cpus in=decon.bam out=${sample}/${sample}_decon_O.fastq.gz unmappedonly=t primaryonly=t deleteinput=t
+		//bwa mem -t \$cpus ${params.human_ref} ${reads} | samtools collate -@ 2 -f -O - | samtools fastq -f 4 -s ${sample}_decon_O.fastq.gz
+		//mv *decon*.fastq.gz $sample/
 	}
 }
 
@@ -152,12 +165,14 @@ process align {
 	if (reads.size() == 2) {
 		"""
 		cpus=\$(expr \"$task.cpus\" - 4)
-		bwa mem -a -t \$cpus ${params.reference} ${sample}.decon_R1.fastq.gz ${sample}.decon_R2.fastq.gz | samtools view -F 4 -buSh - | samtools sort -@ 2 -o ${sample}.paired.bam -
+		mkdir -p $sample
+		bwa mem -a -t \$cpus ${params.reference} ${sample}.decon_R1.fastq.gz ${sample}.decon_R2.fastq.gz | samtools view -F 4 -buSh - | samtools sort -@ 4 -o ${sample}/${sample}.paired.bam -
 		"""
 	} else {
 		"""
 		cpus=\$(expr \"$task.cpus\" - 4)
-		bwa mem -a -t \$cpus ${params.reference} ${reads} | samtools view -F 4 -buSh - | samtools sort -@ 2 -o ${sample}.single.bam -
+		mkdir -p $sample
+		bwa mem -a -t \$cpus ${params.reference} ${reads} | samtools view -F 4 -buSh - | samtools sort -@ 4 -o ${sample}/${sample}.single.bam -
 		"""
 	}
 }
@@ -273,32 +288,40 @@ workflow {
 	to_decontaminate_ch = concat_singles.out.concat_reads
 		.concat(merged_reads_ch.merged.filter({ it != 0 }))
 		.concat(merged_reads_ch.paired.filter({ it != 0 }))
-	to_decontaminate_ch.view()
+	// to_decontaminate_ch.view()
 	decontaminate(to_decontaminate_ch)
 
-	decontaminate.out.decon_reads
+	/*decontaminate.out.decon_reads
 		.multiMap { sample, reads ->
-			single: (reads[0] != null && reads[0].name.endsWith(".fastq.gz")) ? [sample, reads[0]] : 0
-			paired: (reads[1] != null && reads[1].name.endsWith(".fastq.gz") && reads[2] != null && reads[2].name.endsWith(".fastq.gz")) ? [sample, [reads[1], reads[2]]] : 0
+			single: (reads.size() == 1 && reads[0].name.endsWith(".fastq.gz"))  ? [sample, reads[0]] : 0
+			paired: (reads.size() > 1 && reads[0].name.endsWith(".fastq.gz")) ? [sample, [reads[0], reads[1]]] : 0
+			
+			//single: (reads[1] == null && reads[0] != null && reads[0].name.endsWith(".fastq.gz")) ? [sample, reads[0]] : 0
+			////paired: (reads[0] != null && reads[0].name.endsWith(".fastq.gz") && reads[1] != null && reads[1].name.endsWith(".fastq.gz")) ? [sample, [reads[0], reads[1]]] : 0
+	        ////single: (reads[0] != null && reads[0].name.endsWith(".fastq.gz")) ? [sample, reads[0]] : 0
+            //paired: (reads[1] != null && reads[1].name.endsWith(".fastq.gz") && reads[2] != null && reads[2].name.endsWith(".fastq.gz")) ? [sample, [reads[1], reads[2]]] : 0
 			other: 0
 		}
 		.set { decontaminated_reads_ch }
+	*/
 
 	/*
 		Redirect all unpaired, decontaminated reads into a common channel, then concatenate them into a single unpaired fastq file.
 	*/
 
-	single_reads_post_decon_ch = decontaminated_reads_ch.single.filter({ it != 0 })
-		.groupTuple(sort: true)
+	//single_reads_post_decon_ch = decontaminated_reads_ch.single.filter({ it != 0 })
+	//	.groupTuple(sort: true)
+	single_reads_post_decon_ch = decontaminate.out.decon_reads_s.groupTuple(sort: true)
 
 	concat_singles_post_decon(single_reads_post_decon_ch)
-	concat_singles_post_decon.out.concat_reads.view()
+	//concat_singles_post_decon.out.concat_reads.view()
 
 	/*
 		Route all decontaminated sets into alignment.
 	*/
 
-	to_align_ch = concat_singles_post_decon.out.concat_reads.concat(decontaminated_reads_ch.paired.filter({ it != 0 }))
+	//to_align_ch = concat_singles_post_decon.out.concat_reads.concat(decontaminated_reads_ch.paired.filter({ it != 0 }))
+	to_align_ch = concat_singles_post_decon.out.concat_reads.concat(decontaminate.out.decon_reads_p)
 	to_align_ch.view()
 
 	align(to_align_ch)
@@ -311,7 +334,7 @@ workflow {
 		.groupTuple(sort: true)
 
 	merge_and_sort(aligned_ch)
-	merge_and_sort.view()
+	merge_and_sort.out.merged_bam.view()
 
 	/*
 		Run profiling
