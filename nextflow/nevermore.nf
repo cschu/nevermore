@@ -111,188 +111,91 @@ process decontaminate {
 		cpus=\$(expr \"$task.cpus\" - 4)
 		mkdir -p $sample
 
-		bwa mem -t \$cpus ${params.human_ref} ${sample}.merged_R1.fastq.gz ${sample}.merged_R2.fastq.gz | samtools collate -@ 2 -f -O - | samtools fastq -f 4 -0 ${sample}_other.fastq.gz -1 ${sample}.decon_R1.fastq.gz -2 ${sample}.decon_R2.fastq.gz
+		bwa mem -t \$cpus ${params.human_ref} ${sample}.merged_R1.fastq.gz ${sample}.merged_R2.fastq.gz | samtools collate -@ 2 -f -O - | samtools fastq -f 4 -0 ${sample}_decon_O.fastq.gz -1 ${sample}.decon_R1.fastq.gz -2 ${sample}.decon_R2.fastq.gz
+		mv *.fastq.gz $sample/
 		"""
 	} else {
 		"""
 		cpus=\$(expr \"$task.cpus\" - 4)
 		mkdir -p $sample
 
-		bwa mem -t \$cpus ${params.human_ref} ${sample}_concat_singles.fastq.gz | samtools collate -@ 2 -f -O - | samtools fastq -f 4 -s ${sample}_other.fastq.gz
+		bwa mem -t \$cpus ${params.human_ref} ${reads} | samtools collate -@ 2 -f -O - | samtools fastq -f 4 -s ${sample}_decon_O.fastq.gz
+		mv *.fastq.gz $sample/
 		"""
 	}
 }
 
-/*
 
-process decontaminate {
-	conda "bioconda::bwa bioconda::'samtools>=1.11'"
-
+process concat_singles_post_decon {
 	input:
-	val(sample)
-	path(reads1)
-	path(reads2)
+	tuple val(sample), path(reads)
 
 	output:
-	stdout
-	val "$sample", emit: sample_id
-	path "${sample}/${sample}.no_human_R1.fastq.gz", emit: r1_fq
-	path "${sample}/${sample}.no_human_R2.fastq.gz", optional: true, emit: r2_fq
+	tuple val(sample), path("${sample}/${sample}_decon_singles.fastq.gz"), emit: concat_reads
 
 	script:
-	def r1 = reads1
-	def r2 = file(reads2) ? reads2 : ""
-
-	def r1_out = "-1 ${sample}/${sample}.no_human_R1.fastq.gz"
-	def r2_out = file(reads2) ? "-2 ${sample}/${sample}.no_human_R2.fastq.gz" : ""
-
 	"""
-	cpus=\$(expr \"$task.cpus\" - 4)
 	mkdir -p $sample
-	bwa mem -t \$cpus ${params.human_ref} ${r1} ${r2} | samtools collate --threads 2 -f -O - | samtools fastq -@ 2 -f 4 ${r1_out} ${r2_out} -s singletons.fastq.gz -
+	cat ${reads} > ${sample}/${sample}_decon_singles.fastq.gz
 	"""
 }
 
-process decontaminate_singles {
-	conda "bioconda::bwa bioconda::'samtools>=1.11'"
-
-	input:
-	val(sample)
-	path(reads)
-
-	output:
-	stdout
-	val "$sample", emit: sample_id
-	path "${sample}/${sample}.no_human_U.fastq.gz", emit: u_fq
-
-	script:
-
-	"""
-	cpus=\$(expr \"$task.cpus\" - 4)
-	mkdir -p $sample
-	bwa mem -t \$cpus ${params.human_ref} ${reads} | samtools collate --threads 2 -f -O - | samtools fastq -@ 2 -f 4 -s ${sample}/${sample}.no_human_U.fastq.gz -
-	"""
-
-}
 
 process align {
-	conda "bioconda::bwa bioconda::'samtools>=1.11'"
-
 	input:
-	val(sample)
-	path(reads1)
-	path(reads2)
+	tuple val(sample), path(reads)
 
 	output:
-	stdout
-	val "$sample", emit: sample_id
-	path "${sample}.main.bam", emit: bam
+	tuple val(sample), path("${sample}/*.bam"), emit: aligned_reads
 
 	script:
-	def r1 = reads1
-	def r2 =  file(reads2) ? reads2 : ""
-
-	"""
-	cpus=\$(expr \"$task.cpus\" - 4)
-	bwa mem -a -t \$cpus ${params.reference} ${r1} ${r2} | samtools view -F 4 -buSh - | samtools sort -@ 2 -o ${sample}.main.bam -
-	"""
-}
-
-process align_singles {
-	conda "bioconda::bwa bioconda::'samtools>=1.11'"
-
-	input:
-	val(sample)
-	path(reads)
-
-	output:
-	stdout
-	val "$sample", emit: sample_id
-	path "${sample}.main.singles.bam", emit: bam
-
-	script:
-
-	"""
-	cpus=\$(expr \"$task.cpus\" - 4)
-	bwa mem -a -t \$cpus ${params.reference} ${reads} | samtools view -F 4 -buSh - | samtools sort -@ 2 -o ${sample}.main.singles.bam -
-	"""
-}
-
-process rename_bam {
-	publishDir "$output_dir", mode: params.publish_mode
-
-	input:
-	val(sample)
-	path(bam)
-
-	output:
-	stdout
-	val "$sample", emit: sample_id
-	path "${sample}/${sample}.bam", emit: bam
-
-	script:
-
-	"""
-	mkdir -p $sample
-	cp $bam ${sample}/${sample}.bam
-	"""
-}
-
-process merge_and_sort {
-	conda "bioconda::bwa bioconda::'samtools>=1.11'"
-	publishDir "$output_dir", mode: params.publish_mode
-
-	input:
-	val(sample)
-	path(main_bam)
-	path(singles_bam)
-
-	output:
-	stdout
-	val "$sample", emit: sample_id
-	path "${sample}/${sample}.bam", emit: bam
-
-	script:
-	def s_bam = file(singles_bam) ? singles_bam : ""
-
-	if (file(singles_bam)) {
+	if (reads.size() == 2) {
 		"""
-		mkdir -p $sample
-		samtools merge -@ $task.cpus "${sample}/${sample}.bam" ${main_bam} ${s_bam}
+		cpus=\$(expr \"$task.cpus\" - 4)
+		bwa mem -a -t \$cpus ${params.reference} ${sample}.decon_R1.fastq.gz ${sample}.decon_R2.fastq.gz | samtools view -F 4 -buSh - | samtools sort -@ 2 -o ${sample}.paired.bam -
 		"""
 	} else {
 		"""
-		mkdir -p $sample
-		cp ${main_bam} "${sample}/${sample}.bam"
+		cpus=\$(expr \"$task.cpus\" - 4)
+		bwa mem -a -t \$cpus ${params.reference} ${reads} | samtools view -F 4 -buSh - | samtools sort -@ 2 -o ${sample}.single.bam -
 		"""
 	}
 }
 
-process gffquant {
-	conda params.gffquant_env
+
+process merge_and_sort {
 	publishDir "$output_dir", mode: params.publish_mode
 
 	input:
-	val(sample)
-	path(bam)
+	tuple val(sample), path(bamfiles)
 
 	output:
-	stdout
-	val "$sample", emit: sample_id
-	path "${sample}/${sample}.seqname.uniq.txt", emit: uniq_seq
-	path "${sample}/${sample}.seqname.dist1.txt", emit: dist1_seq
-	path "${sample}/${sample}.feature_counts.txt", emit: feat_counts
-	path "${sample}/${sample}.gene_counts.txt", emit: gene_counts
-	path "${sample}/${sample}.covsum.txt", emit: covsum
+	tuple val(sample), path("${sample}/${sample}.bam"), emit: merged_bam
+
+	script:
+	"""
+	mkdir -p $sample
+	samtools merge -@ $task.cpus ${sample}/${sample}.bam ${bamfiles}
+	"""
+}
+
+
+process gffquant {
+	publishDir "$output_dir", mode: params.publish_mode
+
+	input:
+	tuple val(sample), path(bam)
+
+	output:
+	tuple val(sample), path("${sample}/*.txt"), emit: gq_out
 
 	script:
 
 	"""
 	mkdir -p ${sample}
-	gffquant ${params.gffquant_db} ${bam} -o ${sample}/${sample} -m ${params.gffquant_mode} --ambig_mode ${params.gffquant_amode} > ${sample}/${sample}.gq.o 2> ${sample}/${sample}.gq.e
+	gffquant ${params.gffquant_db} ${bam} -o ${sample}/${sample} -m ${params.gffquant_mode} --ambig_mode ${params.gffquant_amode} > ${sample}/${sample}.gq.o.txt 2> ${sample}/${sample}.gq.e.txt
 	"""
 }
-*/
 
 
 workflow {
@@ -341,7 +244,7 @@ workflow {
 		Merge paired-end reads, then split merged reads from those that failed to merge.
 	*/
 
-	qc_bbmerge(preprocessed_reads_ch.paired.filter({it != 0}))
+	qc_bbmerge(preprocessed_reads_ch.paired.filter({ it != 0 }))
 
 	qc_bbmerge.out.merged_reads
 		.multiMap { sample, reads ->
@@ -367,57 +270,52 @@ workflow {
 		Route all read sets (paired and unpaired) into decontamination.
 	*/
 
-	to_decontaminate_ch = concat_singles.out.concat_reads.concat(merged_reads_ch.merged.filter({ it != 0i }))
+	to_decontaminate_ch = concat_singles.out.concat_reads
+		.concat(merged_reads_ch.merged.filter({ it != 0 }))
+		.concat(merged_reads_ch.paired.filter({ it != 0 }))
 	to_decontaminate_ch.view()
+	decontaminate(to_decontaminate_ch)
 
+	decontaminate.out.decon_reads
+		.multiMap { sample, reads ->
+			single: (reads[0] != null && reads[0].name.endsWith(".fastq.gz")) ? [sample, reads[0]] : 0
+			paired: (reads[1] != null && reads[1].name.endsWith(".fastq.gz") && reads[2] != null && reads[2].name.endsWith(".fastq.gz")) ? [sample, [reads[1], reads[2]]] : 0
+			other: 0
+		}
+		.set { decontaminated_reads_ch }
+
+	/*
+		Redirect all unpaired, decontaminated reads into a common channel, then concatenate them into a single unpaired fastq file.
+	*/
+
+	single_reads_post_decon_ch = decontaminated_reads_ch.single.filter({ it != 0 })
+		.groupTuple(sort: true)
+
+	concat_singles_post_decon(single_reads_post_decon_ch)
+	concat_singles_post_decon.out.concat_reads.view()
+
+	/*
+		Route all decontaminated sets into alignment.
+	*/
+
+	to_align_ch = concat_singles_post_decon.out.concat_reads.concat(decontaminated_reads_ch.paired.filter({ it != 0 }))
+	to_align_ch.view()
+
+	align(to_align_ch)
+
+	/*
+		Merge single and paired bams
+	*/
+
+	aligned_ch = align.out.aligned_reads
+		.groupTuple(sort: true)
+
+	merge_and_sort(aligned_ch)
+	merge_and_sort.view()
+
+	/*
+		Run profiling
+	*/
+
+	gffquant(merge_and_sort.out.merged_bam)
 }
-
-
-
-
-/* workflow {
-	reads_ch = Channel
-	    .fromPath(params.input_dir + "/" + params.file_pattern)
-    	.map { file ->
-        	def sample = file.name.replaceAll(suffix_pattern, "")
-        	sample = sample.replaceAll(/_[12]$/, "")
-	        return tuple(sample, file)
-    	}
-	    .groupTuple()
-	reads_ch.view()
-
-	aux_reads_ch = Channel
-		.fromPath(params.input_dir + "/" + params.single_file_pattern)
-		.map { file ->
-			def sample = file.name.replaceAll(suffix_pattern, "")
-			sample = sample.replaceAll(/.singles/, "")
-			return tuple(sample, file)
-		}
-		.groupTuple()
-	aux_reads_ch.view()
-
-	if (params.r1_only) {
-		qc_preprocess_singles(reads_ch)
-		decontaminate_singles(qc_preprocess_singles.out.sample_id, qc_preprocess_singles.out.u_fq)
-		align_singles(decontaminate_singles.out.sample_id, decontaminate_singles.out.u_fq)
-		rename_bam(align_singles.out.sample_id, align_singles.out.bam)
-		gffquant(rename_bam.out.sample_id, rename_bam.out.bam)
-	} else {
-		qc_preprocess(reads_ch)
-		decontaminate(qc_preprocess.out.sample_id, qc_preprocess.out.r1_fq, qc_preprocess.out.r2_fq)
-		align(decontaminate.out.sample_id, decontaminate.out.r1_fq, decontaminate.out.r2_fq)
-		if (run_singles) {
-			qc_preprocess_singles(aux_reads_ch)
-			merge_singles(qc_preprocess.out.sample_id, qc_preprocess.out.u_fq, qc_preprocess_singles.out.u_fq)
-			decontaminate_singles(merge_singles.out.sample_id, merge_singles.out.u_fq)
-			align_singles(decontaminate_singles.out.sample_id, decontaminate_singles.out.u_fq)
-			merge_and_sort(align.out.sample_id, align.out.bam, align_singles.out.bam)
-		} else {
-			decontaminate_singles(qc_preprocess.out.sample_id, qc_preprocess.out.u_fq)
-			align_singles(decontaminate_singles.out.sample_id, decontaminate_singles.out.u_fq)
-			merge_and_sort(align.out.sample_id, align.out.bam, align_singles.out.bam)
-		}
-		gffquant(merge_and_sort.out.sample_id, merge_and_sort.out.bam)
-	}
-
-} */
