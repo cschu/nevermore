@@ -117,11 +117,6 @@ process decontaminate {
 		bwa mem -t \$cpus ${params.human_ref} ${sample}.merged_R1.fastq.gz ${sample}.merged_R2.fastq.gz | samtools view -buh -f 13 -F 0x900 - | samtools collate -@ 4 -O - | samtools fastq -0 ${sample}.decon_O.fastq.gz -1 ${sample}.decon_R1.fastq.gz -2 ${sample}.decon_R2.fastq.gz
 		mv *decon*.fastq.gz ${sample}/
 		"""
-
-		//bwa mem -t \$cpus ${params.human_ref} ${sample}.merged_R1.fastq.gz ${sample}.merged_R2.fastq.gz | samtools view -buh -f 13 -F 0x900 - | samtools collate -@ 4 -o decon.bam - 
-		//reformat.sh -Xmx\$maxmem t=$task.cpus in=decon.bam out=${sample}/${sample}.decon_R1.fastq.gz out2=${sample}/${sample}.decon_R2.fastq.gz unpairedonly=t primaryonly=t deleteinput=t allowidenticalnames=t unmappedonly=t
-		// bwa mem -t \$cpus ${params.human_ref} ${sample}.merged_R1.fastq.gz ${sample}.merged_R2.fastq.gz | samtools collate -@ 2 -f -O - | samtools fastq -f 4 -0 ${sample}_decon_O.fastq.gz -1 ${sample}.decon_R1.fastq.gz -2 ${sample}.decon_R2.fastq.gz
-		//mv *decon*.fastq.gz $sample/
 	} else {
 		def single_suffix = (reads.name.endsWith("merged_M.fastq.gz")) ? "decon_Om" : "decon_Os";
 		"""
@@ -132,10 +127,6 @@ process decontaminate {
 		bwa mem -t \$cpus ${params.human_ref} ${reads} | samtools view -buh -f 4 -F 0x900 - | samtools collate -@ 4 -O - | samtools fastq -0 ${sample}.${single_suffix}.fastq.gz
 		mv *decon*.fastq.gz ${sample}/
 		"""	
-		//bwa mem -t \$cpus ${params.human_ref} ${reads} | samtools view -buh -F 0x900 - | samtools collate -@ 4 -o decon.bam -
-		//reformat.sh -Xmx\$maxmem t=$task.cpus in=decon.bam out=${sample}/${sample}_decon_O.fastq.gz unmappedonly=t primaryonly=t deleteinput=t
-		//bwa mem -t \$cpus ${params.human_ref} ${reads} | samtools collate -@ 2 -f -O - | samtools fastq -f 4 -s ${sample}_decon_O.fastq.gz
-		//mv *decon*.fastq.gz $sample/
 	}
 }
 
@@ -246,30 +237,11 @@ workflow {
 	*/
 
 	qc_preprocess(prepare_fastqs.out.reads)
-	//qc_preprocess.out.qc_reads.view()
-
-	/*qc_preprocess.out.qc_reads
-		//.map { sample, reads ->
-		//	def reads_list = (reads.getClass() instanceof String) ? [reads] : reads
-		//	return tuple(sample, reads_list)
-		//}
-
-		.multiMap { sample, reads ->
-			single
-			//single: (reads[0] != null && reads[0].name.endsWith(".fastq.gz")) ? [sample, reads[0]] : 0
-			//paired: (reads[1] != null && reads[1].name.endsWith(".fastq.gz") && reads[2] != null && reads[2].name.endsWith(".fastq.gz")) ? [sample, [reads[1], reads[2]]] : 0
-			other: 0
-
-		}
-		.set { preprocessed_reads_ch }
-	*/
-
 
 	/*
 		Merge paired-end reads, then split merged reads from those that failed to merge.
 	*/
 
-	// qc_bbmerge(preprocessed_reads_ch.paired.filter({ it != 0 }))
 	qc_bbmerge(qc_preprocess.out.qc_reads_p)
 
 	qc_bbmerge.out.merged_reads
@@ -284,7 +256,6 @@ workflow {
 		Redirect all unpaired reads into a common channel, then concatenate them into a single unpaired fastq file.
 	*/
 
-	//single_reads_ch = merged_reads_ch.merged.filter({ it != 0 }).concat(preprocessed_reads_ch.single.filter({ it != 0 }))
 	single_reads_ch = merged_reads_ch.merged.filter({ it != 0 }).concat(qc_preprocess.out.qc_reads_s)
 		.map { sample, reads ->
 			return tuple(sample.replaceAll(/.singles$/, ""), reads)
@@ -298,41 +269,21 @@ workflow {
 	*/
 
 	to_decontaminate_ch = concat_singles.out.concat_reads
-		//.concat(merged_reads_ch.merged.filter({ it != 0 }))
 		.concat(merged_reads_ch.paired.filter({ it != 0 }))
-	// to_decontaminate_ch.view()
 	decontaminate(to_decontaminate_ch)
-
-	/*decontaminate.out.decon_reads
-		.multiMap { sample, reads ->
-			single: (reads.size() == 1 && reads[0].name.endsWith(".fastq.gz"))  ? [sample, reads[0]] : 0
-			paired: (reads.size() > 1 && reads[0].name.endsWith(".fastq.gz")) ? [sample, [reads[0], reads[1]]] : 0
-
-			//single: (reads[1] == null && reads[0] != null && reads[0].name.endsWith(".fastq.gz")) ? [sample, reads[0]] : 0
-			////paired: (reads[0] != null && reads[0].name.endsWith(".fastq.gz") && reads[1] != null && reads[1].name.endsWith(".fastq.gz")) ? [sample, [reads[0], reads[1]]] : 0
-	        ////single: (reads[0] != null && reads[0].name.endsWith(".fastq.gz")) ? [sample, reads[0]] : 0
-            //paired: (reads[1] != null && reads[1].name.endsWith(".fastq.gz") && reads[2] != null && reads[2].name.endsWith(".fastq.gz")) ? [sample, [reads[1], reads[2]]] : 0
-			other: 0
-		}
-		.set { decontaminated_reads_ch }
-	*/
 
 	/*
 		Redirect all unpaired, decontaminated reads into a common channel, then concatenate them into a single unpaired fastq file.
 	*/
 
-	//single_reads_post_decon_ch = decontaminated_reads_ch.single.filter({ it != 0 })
-	//	.groupTuple(sort: true)
 	single_reads_post_decon_ch = decontaminate.out.decon_reads_s.groupTuple(sort: true)
 
 	concat_singles_post_decon(single_reads_post_decon_ch)
-	//concat_singles_post_decon.out.concat_reads.view()
 
 	/*
 		Route all decontaminated sets into alignment.
 	*/
 
-	//to_align_ch = concat_singles_post_decon.out.concat_reads.concat(decontaminated_reads_ch.paired.filter({ it != 0 }))
 	to_align_ch = concat_singles_post_decon.out.concat_reads.concat(decontaminate.out.decon_reads_p)
 	to_align_ch.view()
 
