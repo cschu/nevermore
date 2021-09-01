@@ -41,7 +41,8 @@ process qc_preprocess {
 	tuple val(sample), path(reads)
 
 	output:
-	tuple val("${sample}"), path("${sample}/${sample}.qc_*.fastq.gz"), emit: qc_reads
+	tuple val("${sample}"), path("${sample}/${sample}.qc_[RO]*.fastq.gz"), optional: true, emit: qc_reads_p
+	tuple val("${sample}"), path("${sample}/${sample}.qc_U.fastq.gz"), optional: true, emit: qc_reads_s
 
 	script:
 	def qc_params = "qtrim=rl trimq=25 maq=25 minlen=45"
@@ -245,21 +246,31 @@ workflow {
 	*/
 
 	qc_preprocess(prepare_fastqs.out.reads)
+	//qc_preprocess.out.qc_reads.view()
 
-	qc_preprocess.out.qc_reads
+	/*qc_preprocess.out.qc_reads
+		//.map { sample, reads ->
+		//	def reads_list = (reads.getClass() instanceof String) ? [reads] : reads
+		//	return tuple(sample, reads_list)
+		//}
+
 		.multiMap { sample, reads ->
-			single: (reads[0] != null && reads[0].name.endsWith(".fastq.gz")) ? [sample, reads[0]] : 0
-			paired: (reads[1] != null && reads[1].name.endsWith(".fastq.gz") && reads[2] != null && reads[2].name.endsWith(".fastq.gz")) ? [sample, [reads[1], reads[2]]] : 0
+			single
+			//single: (reads[0] != null && reads[0].name.endsWith(".fastq.gz")) ? [sample, reads[0]] : 0
+			//paired: (reads[1] != null && reads[1].name.endsWith(".fastq.gz") && reads[2] != null && reads[2].name.endsWith(".fastq.gz")) ? [sample, [reads[1], reads[2]]] : 0
 			other: 0
 
 		}
 		.set { preprocessed_reads_ch }
+	*/
+
 
 	/*
 		Merge paired-end reads, then split merged reads from those that failed to merge.
 	*/
 
-	qc_bbmerge(preprocessed_reads_ch.paired.filter({ it != 0 }))
+	// qc_bbmerge(preprocessed_reads_ch.paired.filter({ it != 0 }))
+	qc_bbmerge(qc_preprocess.out.qc_reads_p)
 
 	qc_bbmerge.out.merged_reads
 		.multiMap { sample, reads ->
@@ -273,7 +284,8 @@ workflow {
 		Redirect all unpaired reads into a common channel, then concatenate them into a single unpaired fastq file.
 	*/
 
-	single_reads_ch = merged_reads_ch.merged.filter({ it != 0 }).concat(preprocessed_reads_ch.single.filter({ it != 0 }))
+	//single_reads_ch = merged_reads_ch.merged.filter({ it != 0 }).concat(preprocessed_reads_ch.single.filter({ it != 0 }))
+	single_reads_ch = merged_reads_ch.merged.filter({ it != 0 }).concat(qc_preprocess.out.qc_reads_s)
 		.map { sample, reads ->
 			return tuple(sample.replaceAll(/.singles$/, ""), reads)
 		}
@@ -286,7 +298,7 @@ workflow {
 	*/
 
 	to_decontaminate_ch = concat_singles.out.concat_reads
-		.concat(merged_reads_ch.merged.filter({ it != 0 }))
+		//.concat(merged_reads_ch.merged.filter({ it != 0 }))
 		.concat(merged_reads_ch.paired.filter({ it != 0 }))
 	// to_decontaminate_ch.view()
 	decontaminate(to_decontaminate_ch)
@@ -295,7 +307,7 @@ workflow {
 		.multiMap { sample, reads ->
 			single: (reads.size() == 1 && reads[0].name.endsWith(".fastq.gz"))  ? [sample, reads[0]] : 0
 			paired: (reads.size() > 1 && reads[0].name.endsWith(".fastq.gz")) ? [sample, [reads[0], reads[1]]] : 0
-			
+
 			//single: (reads[1] == null && reads[0] != null && reads[0].name.endsWith(".fastq.gz")) ? [sample, reads[0]] : 0
 			////paired: (reads[0] != null && reads[0].name.endsWith(".fastq.gz") && reads[1] != null && reads[1].name.endsWith(".fastq.gz")) ? [sample, [reads[0], reads[1]]] : 0
 	        ////single: (reads[0] != null && reads[0].name.endsWith(".fastq.gz")) ? [sample, reads[0]] : 0
