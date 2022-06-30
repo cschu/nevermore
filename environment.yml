@@ -1,0 +1,8 @@
+name: nevermore
+channels:
+ - bioconda
+ - conda-forge
+ - defaults
+dependencies:
+ - python>=3.7
+ - nextflow>=20.10
