@@ -10,9 +10,10 @@ process fastqc {
 
     script:
 
-    log.info """READS: ${reads} ${reads[0]}""".stripIndent()
+    def compression = (reads[0].endsWith(".gz")) ? "gz" : "bz2"
+    log.info """READS: ${reads} ${reads[0]} -> ${compression}""".stripIndent()
 
-    def compression = reads[0].endsWith(".gz") ? "gz" : "bz2"
+    
     def process_r2 = ""
 
     if (sample.is_paired) {
