@@ -2,6 +2,7 @@
 
 import argparse
 import itertools
+import logging
 import os
 import pathlib
 import re
@@ -10,6 +11,14 @@ import subprocess
 import sys
 
 from collections import Counter
+
+
+logging.basicConfig(
+	level=logging.DEBUG,
+	format='[%(asctime)s] %(message)s'
+)
+
+logger = logging.getLogger(__name__)
 
 
 def check_pairwise(r1, r2):
@@ -40,9 +49,11 @@ def transfer_file(source, dest, remote_input=False):
 	if source.endswith("gz") or source.endswith("bz2"):
 		if remote_input:
 			# if file is on remote file system, copy it to destination
+			logging.debug('transfer_file: source=%s, dest=%s, remote_input=%s, action=copy', source, dest, remote_input)
 			shutil.copyfile(resolved_src, dest)
 		else:
 			# if file is compressed and on local fs, just symlink it
+			logging.debug('transfer_file: source=%s, dest=%s, remote_input=%s, action=symlink', source, dest, remote_input)
 			pathlib.Path(dest).symlink_to(resolved_src)
 	elif False:  # source.endswith(".bz2"):
 		# bz2_pr = subprocess.Popen(("bzip2", "-dc", resolved_src), stdout=subprocess.PIPE)
@@ -51,6 +62,7 @@ def transfer_file(source, dest, remote_input=False):
 		...
 	else:
 		# if file is not compressed, gzip it to destination
+		logging.debug('transfer_file: source=%s, dest=%s, remote_input=%s, action=gzip', source, dest, remote_input)
 		with open(dest, "wt") as _out:
 			subprocess.run(("gzip", "-c", resolved_src), stdout=_out)
 
@@ -72,6 +84,7 @@ def transfer_multifiles(files, dest, remote_input=False, compression=None):
 
 		if compression in ("gz", "bz2"):
 			# multiple compressed files can just be concatenated
+			logging.debug('transfer_multifiles: compression=%s, remote_input=%s, action=concatenate', compression, remote_input)
 			with open(dest, "wt") as _out:
 				subprocess.run(cat_cmd, stdout=_out)
 		elif False:  # compression == ".bz2":
@@ -82,11 +95,13 @@ def transfer_multifiles(files, dest, remote_input=False, compression=None):
 			...
 		else:
 			# multiple uncompressed files will be cat | gzipped
+			logging.debug('transfer_multifiles: compression=%s, remote_input=%s, action=concatenate+gzip', compression, remote_input)
 			cat_pr = subprocess.Popen(cat_cmd, stdout=subprocess.PIPE)
 			with open(dest, "wt") as _out:
 				subprocess.run(("gzip", "-c", "-"), stdin=cat_pr.stdout, stdout=_out)
 			
 	else:
+		logging.debug('transfer_multifiles: single file, source=%s, dest=%s, remote_input=%s, action=defer->transfer_file', files[0], dest, remote_input)
 		transfer_file(files[0], dest, remote_input=remote_input)
 
 
