@@ -10,6 +10,8 @@ process fastqc {
 
     script:
 
+    log.info """READS: ${reads} ${reads[0]}""".stripIndent()
+
     def compression = ""
     def process_r2 = ""
 
@@ -19,6 +21,9 @@ process fastqc {
     } else {
         compression = reads.endsWith(".gz") ? "gz" : "bz2"
     }
+
+    // [[id:M0x10MCx1134.singles, is_paired:false, merged:true], /scratch/schudoma/WORK/MetaCardis_INRA.2022-11-24/work/86/1b435dd76e2f6959c1034f3085813d/merged/M0x10MCx1134.singles_R1.fastq.gz]
+    // [[id:M0x10MCx1114.singles, is_paired:false, merged:true], /scratch/schudoma/WORK/MetaCardis_INRA.2022-11-24/work/5c/a62de87c239b62038ca0709237d2fa/merged/M0x10MCx1114.singles_R1.fastq.gz]
 
     """
     set -e -o pipefail
