@@ -84,7 +84,7 @@ workflow nevermore_prep_align {
 
 		/*	perform post-qc fastqc analysis and generate multiqc report on merged single-read and paired-end sets */
 
-		fastq_in_ch.view()
+		fastqc_in_ch.view()
 		fastqc(fastqc_in_ch, "qc")
 
 		multiqc(
