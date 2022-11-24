@@ -37,7 +37,7 @@ def transfer_file(source, dest, remote_input=False):
 
 	"""
 	resolved_src = pathlib.Path(source).resolve()
-	if source.endswith(".gz") or source.endswith(".bz2"):
+	if source.endswith("gz") or source.endswith("bz2"):
 		if remote_input:
 			# if file is on remote file system, copy it to destination
 			shutil.copyfile(resolved_src, dest)
