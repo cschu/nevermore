@@ -70,7 +70,7 @@ def transfer_multifiles(files, dest, remote_input=False, compression=None):
 		src_files = tuple(os.path.abspath(f) for f in files)  # tuple(f.resolve() for f in files)
 		cat_cmd = ("cat", ) + src_files
 
-		if compression in (".gz", ".bz2"):
+		if compression in ("gz", "bz2"):
 			# multiple compressed files can just be concatenated
 			with open(dest, "wt") as _out:
 				subprocess.run(cat_cmd, stdout=_out)
@@ -117,7 +117,9 @@ def process_sample(
 		sample_dir = os.path.join(output_dir, sample)
 		pathlib.Path(sample_dir).mkdir(parents=True, exist_ok=True)
 
-		dest = os.path.join(sample_dir, f"{sample}_R1.fastq.gz")
+		dest_compression = fastqs[0][fastqs[0].rfind(".") + 1:]
+
+		dest = os.path.join(sample_dir, f"{sample}_R1.fastq.{dest_compression}")
 		transfer_file(fastqs[0], dest, remote_input=remote_input)
 
 	elif fastqs:
