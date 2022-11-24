@@ -43,7 +43,7 @@ process prepare_fastqs {
 		path(files)
 		val(remote_input)
 	output:
-		path("fastq/*/*.fastq.gz"), emit: fastqs
+		path("fastq/*/*.fastq.{gz,bz2}"), emit: fastqs
 
   script:
 		def remote_option = (remote_input) ? "--remote-input" : ""

@@ -37,17 +37,18 @@ def transfer_file(source, dest, remote_input=False):
 
 	"""
 	resolved_src = pathlib.Path(source).resolve()
-	if source.endswith(".gz"):
+	if source.endswith(".gz") or source.endswith(".bz2"):
 		if remote_input:
 			# if file is on remote file system, copy it to destination
 			shutil.copyfile(resolved_src, dest)
 		else:
 			# if file is gzipped and on local fs, just symlink it
 			pathlib.Path(dest).symlink_to(resolved_src)
-	elif source.endswith(".bz2"):
-		bz2_pr = subprocess.Popen(("bzip2", "-dc", resolved_src), stdout=subprocess.PIPE)
-		with open(dest, "wt") as _out:
-			subprocess.run(("gzip", "-c", "-"), stdin=bz2_pr.stdout, stdout=_out)
+	elif False:  # source.endswith(".bz2"):
+		# bz2_pr = subprocess.Popen(("bzip2", "-dc", resolved_src), stdout=subprocess.PIPE)
+		# with open(dest, "wt") as _out:
+		#	subprocess.run(("gzip", "-c", "-"), stdin=bz2_pr.stdout, stdout=_out)
+		...
 	else:
 		# if file is not compressed, gzip it to destination
 		with open(dest, "wt") as _out:
@@ -69,15 +70,16 @@ def transfer_multifiles(files, dest, remote_input=False, compression=None):
 		src_files = tuple(os.path.abspath(f) for f in files)  # tuple(f.resolve() for f in files)
 		cat_cmd = ("cat", ) + src_files
 
-		if compression == ".gz":
-			# multiple gzip-compressed files can just be concatenated
+		if compression in (".gz", ".bz2"):
+			# multiple compressed files can just be concatenated
 			with open(dest, "wt") as _out:
 				subprocess.run(cat_cmd, stdout=_out)
-		elif compression == ".bz2":
-			cat_pr = subprocess.Popen(cat_cmd, stdout=subprocess.PIPE)
-			bz2_pr = subprocess.Popen(("bzip2", "-dc", "-"), stdin=cat_pr.stdout, stdout=subprocess.PIPE)
-			with open(dest, "wt") as _out:
-				subprocess.run(("gzip", "-c", "-"), stdin=bz2_pr.stdout, stdout=_out)
+		elif False:  # compression == ".bz2":
+			# cat_pr = subprocess.Popen(cat_cmd, stdout=subprocess.PIPE)
+			# bz2_pr = subprocess.Popen(("bzip2", "-dc", "-"), stdin=cat_pr.stdout, stdout=subprocess.PIPE)
+			# with open(dest, "wt") as _out:
+			#	subprocess.run(("gzip", "-c", "-"), stdin=bz2_pr.stdout, stdout=_out)
+			...
 		else:
 			# multiple uncompressed files will be cat | gzipped
 			cat_pr = subprocess.Popen(cat_cmd, stdout=subprocess.PIPE)
@@ -104,9 +106,7 @@ def process_sample(
 	 - whether fastq files are located on remote file system
 	"""
 
-	if not fastqs:
-		...
-	elif len(fastqs) == 1:
+	if len(fastqs) == 1:
 		# remove potential "single(s)" string from single fastq file name prefix
 		sample_sub = re.sub(r"[._]singles?", "", sample)
 		# 20221018: and attach it at the end of the sample name
@@ -120,7 +120,7 @@ def process_sample(
 		dest = os.path.join(sample_dir, f"{sample}_R1.fastq.gz")
 		transfer_file(fastqs[0], dest, remote_input=remote_input)
 
-	else:
+	elif fastqs:
 
 		# check if all fastq files are compressed the same way
 		suffixes = Counter(

@@ -13,9 +13,20 @@ process qc_bbduk {
 
     script:
     def maxmem = task.memory.toGiga()
-    def read1 = "in1=${sample.id}_R1.fastq.gz out1=qc_reads/${sample.id}/${sample.id}_R1.fastq.gz"
-    def read2 = sample.is_paired ? "in2=${sample.id}_R2.fastq.gz out2=qc_reads/${sample.id}/${sample.id}_R2.fastq.gz outs=qc_reads/${sample.id}/${sample.id}.orphans_R1.fastq.gz" : ""
+    
 
+    def compression = ""
+    def read2 = ""
+
+    if (sample.is_paired) {
+        compression = reads[0].endsWith(".gz") ? "gz" : "bz2"
+        read2 = sample.is_paired ? "in2=${sample.id}_R2.fastq.gz out2=qc_reads/${sample.id}/${sample.id}_R2.fastq.gz outs=qc_reads/${sample.id}/${sample.id}.orphans_R1.fastq.gz" : ""
+    } else {
+        compression = reads.endsWith(".gz") ? "gz" : "bz2"
+    }
+
+    def read1 = "in1=${sample.id}_R1.fastq.${compression} out1=qc_reads/${sample.id}/${sample.id}_R1.fastq.gz"
+    
     trim_params = params.qc_params_shotgun + " ref=${adapters} minlen=${params.qc_minlen}"
 
     """

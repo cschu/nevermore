@@ -52,7 +52,7 @@ workflow nevermore_simple_preprocessing {
 
 		if (params.amplicon_seq) {
 
-			qc_bbduk_stepwise_amplicon(fastq_ch, "${asset_dir}/adapters.fa")
+			qc_bbduk_stepwise_amplicon(fastq_ch, "${asset_dir}/adapters.fa") // amplicon cannot yet do bz2
 			processed_reads_ch = processed_reads_ch.concat(qc_bbduk_stepwise_amplicon.out.reads)
 			orphans_ch = orphans_ch.concat(qc_bbduk_stepwise_amplicon.out.orphans)
 
