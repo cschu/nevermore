@@ -12,14 +12,12 @@ process fastqc {
 
     log.info """READS: ${reads} ${reads[0]}""".stripIndent()
 
-    def compression = ""
+    def compression = reads[0].endsWith(".gz") ? "gz" : "bz2"
     def process_r2 = ""
 
     if (sample.is_paired) {
-        compression = reads[0].endsWith(".gz") ? "gz" : "bz2"
+        // compression = reads[0].endsWith(".gz") ? "gz" : "bz2"
         process_r2 = "fastqc -t $task.cpus --extract --outdir=fastqc ${sample.id}_R2.fastq.${compression} && mv fastqc/${sample.id}_R2_fastqc/fastqc_data.txt fastqc/${sample.id}_R2_fastqc/${sample.id}_R2_fastqc_data.txt"
-    } else {
-        compression = reads.endsWith(".gz") ? "gz" : "bz2"
     }
 
     // [[id:M0x10MCx1134.singles, is_paired:false, merged:true], /scratch/schudoma/WORK/MetaCardis_INRA.2022-11-24/work/86/1b435dd76e2f6959c1034f3085813d/merged/M0x10MCx1134.singles_R1.fastq.gz]
