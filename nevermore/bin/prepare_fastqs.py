@@ -42,7 +42,7 @@ def transfer_file(source, dest, remote_input=False):
 			# if file is on remote file system, copy it to destination
 			shutil.copyfile(resolved_src, dest)
 		else:
-			# if file is gzipped and on local fs, just symlink it
+			# if file is compressed and on local fs, just symlink it
 			pathlib.Path(dest).symlink_to(resolved_src)
 	elif False:  # source.endswith(".bz2"):
 		# bz2_pr = subprocess.Popen(("bzip2", "-dc", resolved_src), stdout=subprocess.PIPE)
@@ -133,13 +133,13 @@ def process_sample(
 		if suffixes.most_common()[0][0]:
 			# all compressed
 			suffixes = Counter(
-				f[f.rfind("."):] for f in fastqs
+				f[f.rfind(".") + 1:] for f in fastqs
 			)
 			if len(suffixes) > 1:
 				raise ValueError(f"sample: {sample} has mixed gzip and bzip2 files. Please check.")
-			compression = suffixes.most_common()[0][0]
+			dest_compression = compression = suffixes.most_common()[0][0]
 		else:
-			compression = None
+			dest_compression, compression = "gz", None
 
 		# extract the file name prefixes
 		prefixes = [re.sub(fastq_suffix_pattern, "", os.path.basename(f)) for f in fastqs]
@@ -179,13 +179,13 @@ def process_sample(
 
 			if r1:
 				# if R1 is not empty, transfer R1-files
-				dest = os.path.join(sample_dir, f"{sample}_R1.fastq.gz")
+				dest = os.path.join(sample_dir, f"{sample}_R1.fastq.{dest_compression}")
 				transfer_multifiles(r1, dest, remote_input=remote_input, compression=compression)
 			if r2:
 				# if R2 is not empty, transfer R2-files,
 				# if R1 is empty, rename R2 to R1 so that files can be processed as normal single-end
 				target_r = "R2" if r1 else "R1"
-				dest = os.path.join(sample_dir, f"{sample}_{target_r}.fastq.gz")
+				dest = os.path.join(sample_dir, f"{sample}_{target_r}.fastq.{dest_compression}")
 				transfer_multifiles(r2, dest, remote_input=remote_input, compression=compression)
 
 		if others:
@@ -195,7 +195,7 @@ def process_sample(
 			# at a later stage
 			sample_dir = sample_dir + ".singles"
 			pathlib.Path(sample_dir).mkdir(parents=True, exist_ok=True)
-			dest = os.path.join(sample_dir, f"{sample}.singles_R1.fastq.gz")
+			dest = os.path.join(sample_dir, f"{sample}.singles_R1.fastq.{dest_compression}")
 			transfer_multifiles(others, dest, remote_input=remote_input, compression=compression)
 		
 
