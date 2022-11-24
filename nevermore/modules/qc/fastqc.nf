@@ -10,7 +10,7 @@ process fastqc {
 
     script:
 
-    def compression = (reads[0].endsWith(".gz")) ? "gz" : "bz2"
+    def compression = (reads[0].name.endsWith(".gz")) ? "gz" : "bz2"
     log.info """READS: ${reads} ${reads[0]} -> ${compression}""".stripIndent()
 
     
@@ -20,6 +20,13 @@ process fastqc {
         // compression = reads[0].endsWith(".gz") ? "gz" : "bz2"
         process_r2 = "fastqc -t $task.cpus --extract --outdir=fastqc ${sample.id}_R2.fastq.${compression} && mv fastqc/${sample.id}_R2_fastqc/fastqc_data.txt fastqc/${sample.id}_R2_fastqc/${sample.id}_R2_fastqc_data.txt"
     }
+
+    // READS: M0x10MCx1134.singles_R1.fastq.bz2 M0x10MCx1134.singles_R1.fastq.bz2 -> bz2
+    // READS: M0x10MCx1114.singles_R1.fastq.bz2 M0x10MCx1114.singles_R1.fastq.bz2 -> bz2
+    // [[id:M0x10MCx1114.singles, is_paired:false, merged:true], /scratch/schudoma/WORK/MetaCardis_INRA.2022-11-24/work/5c/a62de87c239b62038ca0709237d2fa/merged/M0x10MCx1114.singles_R1.fastq.gz]
+    // [[id:M0x10MCx1134.singles, is_paired:false, merged:true], /scratch/schudoma/WORK/MetaCardis_INRA.2022-11-24/work/86/1b435dd76e2f6959c1034f3085813d/merged/M0x10MCx1134.singles_R1.fastq.gz]
+    // READS: M0x10MCx1134.singles_R1.fastq.gz M0x10MCx1134.singles_R1.fastq.gz -> bz2
+    // READS: M0x10MCx1114.singles_R1.fastq.gz M0x10MCx1114.singles_R1.fastq.gz -> bz2
 
     // [[id:M0x10MCx1134.singles, is_paired:false, merged:true], /scratch/schudoma/WORK/MetaCardis_INRA.2022-11-24/work/86/1b435dd76e2f6959c1034f3085813d/merged/M0x10MCx1134.singles_R1.fastq.gz]
     // [[id:M0x10MCx1114.singles, is_paired:false, merged:true], /scratch/schudoma/WORK/MetaCardis_INRA.2022-11-24/work/5c/a62de87c239b62038ca0709237d2fa/merged/M0x10MCx1114.singles_R1.fastq.gz]
