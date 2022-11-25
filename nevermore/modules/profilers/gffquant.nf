@@ -6,11 +6,11 @@ process run_gffquant {
 	path(gq_db)
 
 	output:
-	tuple val(sample), path("${sample}/*.txt.gz"), emit: results
+	tuple val(sample), path("profiles/${sample}/*.txt.gz"), emit: results
 	tuple val(sample), path("logs/${sample}.log")
 
 	script:
-	def gq_output = "-o ${sample}/${sample}"
+	def gq_output = "-o profiles/${sample}/${sample}"
 
 	def gq_params = "-m ${params.gq_mode} --ambig_mode ${params.gq_ambig_mode}"
 	gq_params += (params.gq_strand_specific) ? " --strand_specific" : ""
@@ -50,7 +50,7 @@ process run_gffquant {
 
 	"""
 	set -e -o pipefail
-	mkdir -p logs/ tmp/
+	mkdir -p logs/ tmp/ profiles/
 	echo 'Copying database...'
 	cp -v ${gq_db} gq_db.sqlite3
 	${mk_aln_sam}
