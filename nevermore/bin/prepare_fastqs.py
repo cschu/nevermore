@@ -46,7 +46,7 @@ def transfer_file(source, dest, remote_input=False):
 
 	"""
 	resolved_src = pathlib.Path(source).resolve()
-	if source.endswith("gz") or source.endswith("bz2"):
+	if source[-2:] in ("gz", "bz2"):
 		if remote_input:
 			# if file is on remote file system, copy it to destination
 			logging.debug('transfer_file: source=%s, dest=%s, remote_input=%s, action=copy', source, dest, remote_input)
@@ -55,11 +55,6 @@ def transfer_file(source, dest, remote_input=False):
 			# if file is compressed and on local fs, just symlink it
 			logging.debug('transfer_file: source=%s, dest=%s, remote_input=%s, action=symlink', source, dest, remote_input)
 			pathlib.Path(dest).symlink_to(resolved_src)
-	elif False:  # source.endswith(".bz2"):
-		# bz2_pr = subprocess.Popen(("bzip2", "-dc", resolved_src), stdout=subprocess.PIPE)
-		# with open(dest, "wt") as _out:
-		#	subprocess.run(("gzip", "-c", "-"), stdin=bz2_pr.stdout, stdout=_out)
-		...
 	else:
 		# if file is not compressed, gzip it to destination
 		logging.debug('transfer_file: source=%s, dest=%s, remote_input=%s, action=gzip', source, dest, remote_input)
@@ -76,8 +71,7 @@ def transfer_multifiles(files, dest, remote_input=False, compression=None):
 	 - whether source files are considered to be located on a remote file system
 	 - the compression type of the files (supported: None, gz, bz2)
 	"""
-	print(f"transfer_multifiles: remote={remote_input} compression={compression} dest={dest}", file=sys.stderr, flush=True)
-
+	
 	if len(files) > 1:
 		src_files = tuple(os.path.abspath(f) for f in files)  # tuple(f.resolve() for f in files)
 		cat_cmd = ("cat", ) + src_files
@@ -87,12 +81,6 @@ def transfer_multifiles(files, dest, remote_input=False, compression=None):
 			logging.debug('transfer_multifiles: compression=%s, remote_input=%s, action=concatenate', compression, remote_input)
 			with open(dest, "wt") as _out:
 				subprocess.run(cat_cmd, stdout=_out)
-		elif False:  # compression == ".bz2":
-			# cat_pr = subprocess.Popen(cat_cmd, stdout=subprocess.PIPE)
-			# bz2_pr = subprocess.Popen(("bzip2", "-dc", "-"), stdin=cat_pr.stdout, stdout=subprocess.PIPE)
-			# with open(dest, "wt") as _out:
-			#	subprocess.run(("gzip", "-c", "-"), stdin=bz2_pr.stdout, stdout=_out)
-			...
 		else:
 			# multiple uncompressed files will be cat | gzipped
 			logging.debug('transfer_multifiles: compression=%s, remote_input=%s, action=concatenate+gzip', compression, remote_input)
@@ -226,9 +214,6 @@ def is_fastq(f, valid_fastq_suffixes, valid_compression_suffixes):
 	 - true if file is fastq else false
 
 	"""
-	# valid_fastq_suffixes = (".fastq", ".fq", ".txt")
-	# valid_compression_suffixes = (".gz", ".bz2")
-
 	prefix, suffix = os.path.splitext(f)
 	if suffix in valid_fastq_suffixes:
 		return True
@@ -291,42 +276,9 @@ def main():
 		raise ValueError("Found {len(root_fastqs)} fastq files in input directory together with {len(samples)} sample directories. Please check input data.")
 	elif root_fastqs:
 		for f in root_fastqs:
-			# sample = re.sub(r"[._](fastq|fq|txt)([._](gz|bz2))?$", "", os.path.basename(f))
 			sample = re.sub(fastq_file_suffix_pattern, "", os.path.basename(f))
 			sample = re.sub(fastq_mate_pattern, "", sample)
 			samples.setdefault(sample, []).append(f)
-
-	# # collect all fastq files from input directory
-	# # assumption: fastq files are sym-linked into input_dir from a sample/files directory tree
-	# # i.e., from a nextflow.Channel()
-	# fastqs = sorted(
-	# 	f 
-	# 	for f in os.listdir(args.input_dir)
-	# 	if is_fastq(f)
-	# )
-	# assert fastqs, f"Could not find any fastq files in '{args.input_dir}'."
-
-	# samples = {}
-
-	# # resolve the symlinks and group by sample ids
-	# for f in fastqs:
-	# 	full_f = pathlib.Path(os.path.join(args.input_dir, f))
-	# 	if full_f.is_symlink():
-	# 		link_target = full_f.resolve()
-	# 		sample, *_, _ = str(link_target).replace(args.prefix, "").lstrip("/").split("/")
-	# 		samples.setdefault(sample, []).append(full_f)
-
-	# # if there is only one sample, this points at a flat sample hierarchy (input_dir/{file1,file2,file3,...})
-	# # in this case, we derive the sample names from the files: same prefix -> same sample
-	# # in a flat sample hierarchy, we cannot have mixed file prefixes, i.e. no lanes, no preprocessed singles, etc.
-	# if len(samples) == 1:
-	# 	tmp_samples = {}
-	# 	for f in samples[list(samples.keys())[0]]:
-	# 		sample = re.sub(r"\.(fastq|fq|txt)(.(gz|bz2))?$", "", os.path.basename(f.name))
-	# 		sample = re.sub(r"([._R][12])$?", "", sample)
-	# 		tmp_samples.setdefault(sample, []).append(f)
-	# 	samples.clear()
-	# 	samples = tmp_samples		
 
 	# check and transfer the files
 	for sample, fastqs in samples.items():
