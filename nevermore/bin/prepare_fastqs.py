@@ -46,7 +46,8 @@ def transfer_file(source, dest, remote_input=False):
 
 	"""
 	resolved_src = pathlib.Path(source).resolve()
-	if source[-2:] in ("gz", "bz2"):
+
+	if os.path.splitext(source)[1][1:] in ("gz", "bz2"):
 		if remote_input:
 			# if file is on remote file system, copy it to destination
 			logging.debug('transfer_file: source=%s, dest=%s, remote_input=%s, action=copy', source, dest, remote_input)
