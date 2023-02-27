@@ -47,6 +47,25 @@ process db_filter {
     """
 }
 
+
+process readcount {
+    label 'samtools'
+
+    input:
+    tuple val(sample), path(bam)
+
+    output:
+    tuple val(sample), path("${sample}.readcounts.txt"), emit: readcounts
+
+    script:
+    """
+    set -e -o pipefail
+    mkdir -p tmp/
+    samtools view ${sample}.bam | cut -f 1 | uniq | sort -u -T tmp/ | wc -l > ${sample}.readcounts.txt
+    """
+}
+
+
 process db2bed3 {
     input:
     path(db)

@@ -32,7 +32,7 @@ process transfer_bams {
 	script:
 		"""
 		mkdir -p bam/
-		find . -maxdepth 1 -type l -name '*.bam' | xargs -I {} readlink {} | xargs -I {} rsync -avP {} bam/
+		find . -maxdepth 1 -type l -name '*.bam' | xargs -I {} readlink {} | xargs -I {} rsync -vP {} bam/
 		"""
 }
 
