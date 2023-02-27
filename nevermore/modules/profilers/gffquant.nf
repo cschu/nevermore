@@ -59,9 +59,7 @@ process run_gffquant {
 	"""
 }
 
-
 process collate_feature_counts {
-	// publishDir "${params.output_dir}", mode: params.publish_mode
 
 	input:
 	tuple val(sample), path(count_tables)

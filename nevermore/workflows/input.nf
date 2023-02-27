@@ -55,7 +55,6 @@ process prepare_fastqs {
 		"""
 		prepare_fastqs.py -i . -o fastq/ -p ${input_dir_prefix} ${custom_suffixes} ${remote_option} ${remove_suffix}
 		"""
-		// mkdir -p fastq/
 }
 
 
