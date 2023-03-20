@@ -126,6 +126,8 @@ def process_sample(
 		dest = os.path.join(sample_dir, f"{sample}_R1.fastq.{dest_compression}")
 		transfer_file(fastqs[0], dest, remote_input=remote_input)
 
+		return sample, False
+
 	elif fastqs:
 
 		# check if all fastq files are compressed the same way
@@ -203,6 +205,8 @@ def process_sample(
 			pathlib.Path(sample_dir).mkdir(parents=True, exist_ok=True)
 			dest = os.path.join(sample_dir, f"{sample}.singles_R1.fastq.{dest_compression}")
 			transfer_multifiles(others, dest, remote_input=remote_input, compression=compression)
+
+		return sample, bool(r1 and r2)
 		
 
 def is_fastq(f, valid_fastq_suffixes, valid_compression_suffixes):
@@ -282,16 +286,18 @@ def main():
 			samples.setdefault(sample, []).append(f)
 
 	# check and transfer the files
-	for sample, fastqs in samples.items():
-		try:
-			process_sample(
-				sample, fastqs, args.output_dir,
-				fastq_file_suffix_pattern,
-				remove_suffix=args.remove_suffix, remote_input=args.remote_input
-			)
-		except Exception as e:
-			raise ValueError(f"Encountered problems processing sample '{sample}': {e}.\nPlease check your file names.")
+	with open("sample_library_info.txt", "wt") as lib_out:
+		for sample, fastqs in samples.items():
+			try:
+				_, is_paired = process_sample(
+					sample, fastqs, args.output_dir,
+					fastq_file_suffix_pattern,
+					remove_suffix=args.remove_suffix, remote_input=args.remote_input
+				)
+			except Exception as e:
+				raise ValueError(f"Encountered problems processing sample '{sample}': {e}.\nPlease check your file names.")
 
+			print(sample, int(is_paired), sep="\t", file=lib_out)
 
 if __name__ == "__main__":
 	main()

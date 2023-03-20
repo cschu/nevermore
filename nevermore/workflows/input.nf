@@ -1,6 +1,6 @@
 nextflow.enable.dsl=2
 
-include { classify_sample } from "../modules/functions"
+include { classify_sample; classify_sample_with_library_info } from "../modules/functions"
 
 
 if (!params.bam_input_pattern) {
@@ -44,6 +44,7 @@ process prepare_fastqs {
 		val(remote_input)
 	output:
 		path("fastq/*/*.fastq.{gz,bz2}"), emit: fastqs
+		path("sample_library_info.txt"), emit: library_info
 
   script:
 		def remote_option = (remote_input) ? "--remote-input" : ""
@@ -95,13 +96,21 @@ workflow fastq_input {
 	main:
 		prepare_fastqs(fastq_ch.collect(), (params.remote_input_dir != null || params.remote_input_dir))
 
+		library_info_ch = prepare_fastqs.out.library_info
+			.splitCsv(header:false, sep:'\t', strip:true)
+			.map { row -> 
+				return tuple(row[0], row[1])
+			}
+
 		fastq_ch = prepare_fastqs.out.fastqs
 			.flatten()
 			.map { file -> 
 				def sample = file.getParent().getName()
 				return tuple(sample, file)
-			}.groupTuple(sort: true)
-			.map { classify_sample(it[0], it[1]) }
+			}
+			.groupTuple(sort: true)
+			.join(library_info_ch)
+			.map { classify_sample_with_library_info(it[0], it[2], it[1]) }
 
 	emit:
 		fastqs = fastq_ch
