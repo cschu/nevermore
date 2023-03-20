@@ -109,8 +109,19 @@ workflow fastq_input {
 				return tuple(sample, file)
 			}
 			.groupTuple(sort: true)
-			.join(library_info_ch)
-			.map { classify_sample_with_library_info(it[0], it[2], it[1]) }
+			.join(library_info_ch, remainder: true)
+			.map { sample_id, files, library_is_paired ->
+				def meta = [:]
+				meta.id = sample_id
+				meta.is_paired = (files instanceof Collection && files.size() == 2)
+				meta.library = (library_is_paired == "1") ? "paired" : "single"
+				return tuple(meta, files)
+				// classify_sample_with_library_info(it[0], it[2], it[1]) 
+			}
+
+
+
+		fastq_ch.view()
 
 	emit:
 		fastqs = fastq_ch
