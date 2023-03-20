@@ -19,12 +19,15 @@ process bwa_mem_align {
 
     def sort_cmd = (do_name_sort) ? "samtools collate -@ ${sort_cpus} -o ${sample.id}.bam - tmp/collated_bam" : "samtools sort -@ ${sort_cpus} -o ${sample.id}.bam -"
 
+    def read_group_id = (sample.library == "paired") ? ((sample.is_paired) ? "pairs" : "orphans") : "singles"
+    def read_group = "@RG\tID:${read_group_id}\tSM:${sample.id}"
+
     """
     set -e -o pipefail
     mkdir -p tmp/
     sortbyname.sh -Xmx${maxmem}g in=${sample.id}_R1.fastq.gz out=${sample.id}_R1.sorted.fastq.gz
     ${sort_reads2}
-    bwa mem -a -t ${align_cpus} ${blocksize} \$(readlink ${reference}) ${sample.id}_R1.sorted.fastq.gz ${reads2} | samtools view -F 4 -buSh - | ${sort_cmd}
+    bwa mem -R ${read_group_id} -a -t ${align_cpus} ${blocksize} \$(readlink ${reference}) ${sample.id}_R1.sorted.fastq.gz ${reads2} | samtools view -F 4 -buSh - | ${sort_cmd}
     rm -rvf tmp/ *.sorted.fastq.gz
     """
 }

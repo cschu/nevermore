@@ -34,12 +34,12 @@ workflow {
 
 
 	
-	// nevermore_main(fastq_ch)
+	nevermore_main(fastq_ch)
 
-	// if (!params.skip_profiling) {
+	if (!params.skip_profiling) {
 
-	// 	gffquant_flow(nevermore_main.out.alignments)
+		gffquant_flow(nevermore_main.out.alignments)
 
-	// }
+	}
 
 }

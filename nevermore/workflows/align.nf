@@ -25,6 +25,7 @@ workflow nevermore_prep_align {
 				def meta = [:]
 				meta.id = fastq.name.replaceAll(/_R1.fastq.gz$/, "")
 				meta.is_paired = false
+				meta.library = sample.library
 				meta.merged = false
 				return tuple(meta, fastq)
 			}
@@ -37,6 +38,7 @@ workflow nevermore_prep_align {
 				def meta = [:]
 				meta.id = sample.id
 				meta.is_paired = true
+				meta.library = sample.library
 				meta.merged = true
 				return tuple(meta, fastq)
 			}
@@ -55,6 +57,7 @@ workflow nevermore_prep_align {
 				def meta = [:]
 				meta.id = sample_id
 				meta.is_paired = false
+				meta.libray = sample.library
 				meta.merged = true
 				return tuple(meta, files)
 			}
@@ -76,6 +79,7 @@ workflow nevermore_prep_align {
 				def meta = [:]
 				meta.id = fastq.name.replaceAll(/_R1.fastq.gz$/, "")
 				meta.is_paired = false
+				meta.library = sample.library
 				meta.merged = false
 				return tuple(meta, fastq)
 			}

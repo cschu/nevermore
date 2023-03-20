@@ -41,8 +41,9 @@ workflow nevermore_main {
 					chimera_ch = remove_host_kraken2_individual.out.chimera_orphans
 						.map { sample, file ->
 							def meta = [:]
-							meta.is_paired = false
 							meta.id = sample.id + ".chimeras"
+							meta.is_paired = false
+							meta.library = sample.library
 							return tuple(meta, file)
 						}
 					preprocessed_ch = preprocessed_ch.concat(chimera_ch)
