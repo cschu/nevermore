@@ -12,14 +12,14 @@ process qc_bbduk {
 
     script:
     def maxmem = task.memory.toGiga()
-    def compression = (reads[0].name.endsWith(".gz")) ? "gz" : "bz2"
+    def compression = (reads[0].name.endsWith("gz")) ? "gz" : "bz2"
 
     def read2 = ""
     def orphan_check = ""
     
     if (sample.is_paired) {
         def orphans = "qc_reads/${sample.id}/${sample.id}.orphans_R1.fastq.gz"
-        read2 = "in2=${sample.id}_R2.fastq.gz out2=qc_reads/${sample.id}/${sample.id}_R2.fastq.gz outs=${orphans}"
+        read2 = "in2=${sample.id}_R2.fastq.${compression} out2=qc_reads/${sample.id}/${sample.id}_R2.fastq.gz outs=${orphans}"
         orphan_check = """
         if [[ -z "\$(gzip -dc ${orphans} | head -n 1)" ]]; then
 			rm ${orphans}
