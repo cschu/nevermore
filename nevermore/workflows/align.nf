@@ -49,15 +49,16 @@ workflow nevermore_prep_align {
 			.map { sample, fastq ->
 				return tuple(
 					sample.id.replaceAll(/.(orphans|singles|chimeras)$/, ".singles"),
+					sample.library,
 					fastq
 				)
 			}
 			.groupTuple(sort: true)
-			.map { sample_id, files ->
+			.map { sample_id, library, files ->
 				def meta = [:]
 				meta.id = sample_id
 				meta.is_paired = false
-				meta.libray = sample.library
+				meta.library = library
 				meta.merged = true
 				return tuple(meta, files)
 			}
