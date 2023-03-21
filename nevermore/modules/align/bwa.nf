@@ -19,7 +19,7 @@ process bwa_mem_align {
 
     def sort_cmd = (do_name_sort) ? "samtools collate -@ ${sort_cpus} -o ${sample.id}.bam - tmp/collated_bam" : "samtools sort -@ ${sort_cpus} -o ${sample.id}.bam -"
 
-    def read_group_id = (sample.library == "paired") ? ((sample.is_paired) ? "pairs" : "orphans") : "singles"
+    def read_group_id = (sample.library == "paired") ? ((sample.is_paired) ? 2 : 2) : 1
     def read_group = "'@RG\\tID:${read_group_id}\\tSM:${sample.id}'"
 
     """
