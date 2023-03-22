@@ -292,7 +292,7 @@ def main():
 	with open("sample_library_info.txt", "wt") as lib_out:
 		for sample, fastqs in samples.items():
 			try:
-			    renamed = process_sample(
+				renamed = process_sample(
 					sample, fastqs, args.output_dir,
 					fastq_file_suffix_pattern,
 					remove_suffix=args.remove_suffix, remote_input=args.remote_input

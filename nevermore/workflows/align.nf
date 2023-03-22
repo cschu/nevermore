@@ -45,23 +45,63 @@ workflow nevermore_prep_align {
 
 		/*	group all single-read files by sample and route into merge-channel */
 
-		merged_single_ch = single_ch
-			.map { sample, fastq ->
-				return tuple(
-					sample.id.replaceAll(/.(orphans|singles|chimeras)$/, ".singles"),
-					sample.library,
-					fastq
-				)
+		single_ch
+			.map {
+				sample, fastq ->
+					sample.id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, ".singles")
+					return tuple(sample, fastq)
+			}
+			.branch {
+				single_end: it[0].library == "single"
+				paired_end: it[0].library == "paired"
+			}
+		.set { single_reads_ch }
+
+		merged_single_ch = single_reads_ch.single_end
+			.map { sample, fastq  ->
+				return tuple(sample.id, fastq)
 			}
 			.groupTuple(sort: true)
-			.map { sample_id, library, files ->
+			.map { sample_id, files ->
 				def meta = [:]
 				meta.id = sample_id
 				meta.is_paired = false
-				meta.library = library
+				meta.library = "single"
 				meta.merged = true
-				return tuple(meta, files)
 			}
+			.concat(
+				single_reads_ch.paired_end
+					.map { sample, fastq  ->
+						return tuple(sample.id, fastq)
+					}
+					.groupTuple(sort: true)
+					.map { sample_id, files ->
+						def meta = [:]
+						meta.id = sample_id
+						meta.is_paired = false
+						meta.library = "paired"
+						meta.merged = true
+					}
+			)
+
+		merged_single_ch.view()
+		// merged_single_ch = single_ch
+		// 	.map { sample, fastq ->
+		// 		return tuple(
+		// 			sample.id.replaceAll(/.(orphans|singles|chimeras)$/, ".singles"),
+		// 			sample.library,
+		// 			fastq
+		// 		)
+		// 	}
+		// 	.groupTuple(sort: true)
+		// 	.map { sample_id, library, files ->
+		// 		def meta = [:]
+		// 		meta.id = sample_id
+		// 		meta.is_paired = false
+		// 		meta.library = library
+		// 		meta.merged = true
+		// 		return tuple(meta, files)
+		// 	}
 
 		/*	then merge single-read file groups into single files */
 
@@ -117,6 +157,8 @@ workflow nevermore_align {
 		fastq_ch
 
 	main:
+
+		fastq_ch.view()
 		
 		/*	align merged single-read and paired-end sets against reference */
 
