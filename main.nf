@@ -20,7 +20,7 @@ if (params.input_dir && params.remote_input_dir) {
 
 def input_dir = (params.input_dir) ? params.input_dir : params.remote_input_dir
 
-
+params.ignore_dirs = ""
 
 
 
@@ -28,6 +28,7 @@ workflow {
 
 	fastq_input(
 		Channel.fromPath(input_dir + "/*", type: "dir")
+			.filter { !params.ignore_dirs.split(",").contains(it.name) }
 	)
 
 	fastq_ch = fastq_input.out.fastqs
