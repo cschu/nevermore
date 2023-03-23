@@ -68,6 +68,7 @@ workflow nevermore_prep_align {
 				meta.is_paired = false
 				meta.library = "single"
 				meta.merged = true
+				return tuple(meta, files)
 			}
 			.concat(
 				single_reads_ch.paired_end
@@ -81,6 +82,7 @@ workflow nevermore_prep_align {
 						meta.is_paired = false
 						meta.library = "paired"
 						meta.merged = true
+						return tuple(meta, files)
 					}
 			)
 
