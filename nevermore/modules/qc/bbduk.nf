@@ -9,6 +9,7 @@ process qc_bbduk {
     tuple val(sample), path("qc_reads/${sample.id}/${sample.id}_R*.fastq.gz"), emit: reads
     tuple val(sample), path("qc_reads/${sample.id}/${sample.id}.orphans_R1.fastq.gz"), emit: orphans, optional: true
     path("stats/qc/bbduk/${sample.id}.bbduk_stats.txt")
+    tuple val(sample), path("qc_reads/${sample.id}/BBDUK_FINISHED"), emit: sentinel
 
     script:
     def maxmem = task.memory.toGiga()
@@ -33,8 +34,12 @@ process qc_bbduk {
     def stats_out = "stats=stats/qc/bbduk/${sample.id}.bbduk_stats.txt"
 
     """
-    mkdir -p qc_reads/${sample.id} stats/qc/bbduk/
+    set -e -o pipefail
+
+    mkdir -p qc_reads/${sample.id}/ stats/qc/bbduk/
     bbduk.sh -Xmx${maxmem}g t=${task.cpus} ${trim_params} ${stats_out} ${read1} ${read2}
     ${orphan_check}
+
+    touch qc_reads/${sample.id}/BBDUK_FINISHED
     """
 }
