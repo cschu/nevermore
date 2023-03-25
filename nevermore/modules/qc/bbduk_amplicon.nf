@@ -42,6 +42,8 @@ process qc_bbduk_stepwise_amplicon {
 			bbduk_full_call += "${bbduk_call} ${ref_p3_r1} minlength=${params.qc_minlen} ${params.p3_primer_params} in1=fwd_p5.fastq.gz out1=fwd.fastq.gz\n"
 			bbduk_full_call += "${bbduk_call} ${ref_p3_r2} minlength=${params.qc_minlen} ${params.p3_primer_params} in1=rev_p5.fastq.gz out1=rev.fastq.gz\n"
 
+		} else {
+			bbduk_full_call += "mv fwd_p5.fastq.gz fwd.fastq.gz\nmv rev_p5.fastq.gz rev.fastq.gz\n"
 		}
 
 		downstream_call += "gzip -dc fwd.fastq.gz | awk 'NR%4==1' | sed 's/^@//' | sed 's/\\/1//' | sort -T tmp/ > fwd.txt\n"
