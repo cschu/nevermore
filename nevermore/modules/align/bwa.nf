@@ -22,7 +22,7 @@ process bwa_mem_align {
     """
     set -e -o pipefail
     mkdir -p tmp/
-    sortbyname.sh -Xmx${maxmem}g in=${sample.id}_R1.fastq.gz out=${sample.id}_R1.sorted.fastq.gz
+    sortbyname.sh -Xmx${maxmem}g in=${sample.id}_R1.fastq.gz out=${sample.id}_R1.sorted.fastq.gz interleaved=f
     ${sort_reads2}
     bwa mem -a -t ${align_cpus} ${blocksize} \$(readlink ${reference}) ${sample.id}_R1.sorted.fastq.gz ${reads2} | samtools view -F 4 -buSh - | ${sort_cmd}
     rm -rvf tmp/ *.sorted.fastq.gz
