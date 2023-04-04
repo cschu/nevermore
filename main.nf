@@ -32,8 +32,6 @@ workflow {
 	)
 
 	fastq_ch = fastq_input.out.fastqs
-
-
 	
 	nevermore_main(fastq_ch)
 
