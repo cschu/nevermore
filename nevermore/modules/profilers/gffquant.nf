@@ -1,3 +1,39 @@
+params.gq_aligner = "bwa_mem"
+
+process stream_gffquant {
+	label "gffquant"
+	tag "gffquant.${sample}"
+
+	input:
+		tuple val(sample), path(fastqs)
+		path(gq_db)
+		path(reference)
+	output:
+		tuple val(sample), path("profiles/${sample}/*.txt.gz"), emit: results
+		tuple val(sample), path("logs/${sample}.log")
+
+	script:
+			def gq_output = "-o profiles/${sample}/${sample}"
+
+			def gq_params = "-m ${params.gq_mode} --ambig_mode ${params.gq_ambig_mode}"
+			gq_params += (params.gq_strand_specific) ? " --strand_specific" : ""
+			gq_params += (params.gq_min_seqlen) ? (" --min_seqlen " + params.gq_min_seqlen) : ""
+			gq_params += (params.gq_min_identity) ? (" --min_identity " + params.gq_min_identity) : ""
+			gq_params += (params.gq_restrict_metrics) ? " --restrict_metrics ${params.gq_restrict_metrics}" : ""
+	
+			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db gq_db.sqlite3 --reference ${reference} --aligner ${params.gq_aligner} --fastq *.fastq.gz"
+
+			"""
+			set -e -o pipefail
+			mkdir -p logs/ tmp/ profiles/
+			echo 'Copying database...'
+			cp -v ${gq_db} gq_db.sqlite3
+			${gq_cmd} &> logs/${sample}.log
+			rm -rfv gq_db.sqlite3* tmp/
+			"""
+
+}
+
 process run_gffquant {
 	label "gffquant"
 

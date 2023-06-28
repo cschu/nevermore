@@ -1,17 +1,35 @@
-include { run_gffquant; collate_feature_counts; } from "../modules/profilers/gffquant"
+include { stream_gffquant; run_gffquant; collate_feature_counts; } from "../modules/profilers/gffquant"
 
 params.gq_collate_columns = "uniq_scaled,combined_scaled"
+
+
+workflow gffquant_stream {
+	take:
+		fastq_ch
+	main:
+		gq_stream_ch = fastq_ch
+			.map {
+				sample, files -> return tuple(sample.id, files)
+			}
+		stream_gffquant(gq_stream_ch, params.gffquant_db)
+	emit:
+
+}
 
 
 workflow gffquant_flow {
 
 	take:
 
-		bam_ch
+		input_ch
 
 	main:
 
-		run_gffquant(bam_ch, params.gffquant_db)
+		if (params.gq_stream) {
+			stream_gffquant(input_ch, params.gffquant_db)
+		} else {
+			run_gffquant(input_ch, params.gffquant_db)
+		}
 
 		feature_count_ch = run_gffquant.out.results
 			.map { sample, files -> return files }

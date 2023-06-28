@@ -37,7 +37,8 @@ workflow {
 
 	if (params.run_gffquant) {
 
-		gffquant_flow(nevermore_main.out.alignments)
+		gq_input_ch = (params.gq_stream) ? nevermore_main.out.fastqs : never_main.out.alignments		
+		gffquant_flow(gq_input_ch)		
 
 	}
 
