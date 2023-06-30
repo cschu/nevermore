@@ -20,8 +20,13 @@ process stream_gffquant {
 			gq_params += (params.gq_min_seqlen) ? (" --min_seqlen " + params.gq_min_seqlen) : ""
 			gq_params += (params.gq_min_identity) ? (" --min_identity " + params.gq_min_identity) : ""
 			gq_params += (params.gq_restrict_metrics) ? " --restrict_metrics ${params.gq_restrict_metrics}" : ""
+
+			def input_files = ""
+			input_files += "--fastq-r1 \$(ls *_R1.fastq.gz)"
+			input_files += " --fastq-r2 \$(ls *_R2.fastq.gz)"
+			input_files += " --fastq-orphans \$(ls *singles*.fastq.gz)"
 	
-			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db gq_db.sqlite3 --reference ${reference} --aligner ${params.gq_aligner} --fastq *.fastq.gz"
+			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db gq_db.sqlite3 --reference ${reference} --aligner ${params.gq_aligner} ${input_files}"
 
 			"""
 			set -e -o pipefail
