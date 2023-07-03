@@ -12,6 +12,7 @@ include { nevermore_align; nevermore_prep_align } from "./align"
 
 def do_preprocessing = (!params.skip_preprocessing || params.run_preprocessing)
 def do_alignment = params.run_gffquant || !params.skip_alignment
+def do_stream = params.gq_stream
 
 workflow nevermore_main {
 
