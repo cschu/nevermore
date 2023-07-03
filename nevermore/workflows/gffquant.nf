@@ -26,7 +26,7 @@ workflow gffquant_flow {
 	main:
 
 		if (params.gq_stream) {
-			stream_gffquant(input_ch, params.gffquant_db)
+			stream_gffquant(input_ch, params.gffquant_db, params.reference)
 		} else {
 			run_gffquant(input_ch, params.gffquant_db)
 		}
