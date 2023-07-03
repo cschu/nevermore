@@ -3,18 +3,18 @@ include { stream_gffquant; run_gffquant; collate_feature_counts; } from "../modu
 params.gq_collate_columns = "uniq_scaled,combined_scaled"
 
 
-workflow gffquant_stream {
-	take:
-		fastq_ch
-	main:
-		gq_stream_ch = fastq_ch
-			.map {
-				sample, files -> return tuple(sample.id, files)
-			}
-		stream_gffquant(gq_stream_ch, params.gffquant_db)
-	emit:
+// workflow gffquant_stream {
+// 	take:
+// 		fastq_ch
+// 	main:
+// 		gq_stream_ch = fastq_ch
+// 			.map {
+// 				sample, files -> return tuple(sample.id, files)
+// 			}
+// 		stream_gffquant(gq_stream_ch, params.gffquant_db)
+// 	emit:
 
-}
+// }
 
 
 workflow gffquant_flow {
