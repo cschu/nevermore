@@ -27,11 +27,13 @@ workflow gffquant_flow {
 
 		if (params.gq_stream) {
 			stream_gffquant(input_ch, params.gffquant_db, params.reference)
+			feature_count_ch = stream_gffquant.out.results
 		} else {
 			run_gffquant(input_ch, params.gffquant_db)
+			feature_count_ch = run_gffquant.out.results
 		}
 
-		feature_count_ch = run_gffquant.out.results
+		feature_count_ch = feature_count_ch
 			.map { sample, files -> return files }
 			.flatten()
 			.filter { !it.name.endsWith("Counter.txt.gz") }
