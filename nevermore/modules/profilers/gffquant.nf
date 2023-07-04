@@ -23,9 +23,9 @@ process stream_gffquant {
 			gq_params += (params.gq_keep_alignments) ? " --keep_alignment_file ${sample}.sam" : ""
 
 			def input_files = ""
-			input_files += "--fastq-r1 \$(ls *_R1.fastq.gz)"
-			input_files += " --fastq-r2 \$(ls *_R2.fastq.gz)"
-			input_files += " --fastq-orphans \$(ls *singles*.fastq.gz)"
+			input_files += "--fastq-r1 \$(find . -maxdepth 1 -type l -name '*_R1.fastq.gz')"
+			input_files += " --fastq-r2 \$(find . -maxdepth 1 -type l -name '*_R2.fastq.gz')"
+			input_files += " --fastq-orphans \$(find . -maxdepth 1 -type l -name '*singles*.fastq.gz')"
 	
 			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db gq_db.sqlite3 --reference ${reference} --aligner ${params.gq_aligner} ${input_files}"
 
