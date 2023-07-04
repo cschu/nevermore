@@ -28,9 +28,11 @@ workflow gffquant_flow {
 		if (params.gq_stream) {
 			stream_gffquant(input_ch, params.gffquant_db, params.reference)
 			feature_count_ch = stream_gffquant.out.results
+			counts = stream_gffquant.out.results
 		} else {
 			run_gffquant(input_ch, params.gffquant_db)
 			feature_count_ch = run_gffquant.out.results
+			counts = run_gffquant.out.results
 		}
 
 		feature_count_ch = feature_count_ch
@@ -53,7 +55,7 @@ workflow gffquant_flow {
 
 	emit:
 
-		counts = run_gffquant.out.results
+		counts
 		collated = collate_feature_counts.out.collated
 
 }
