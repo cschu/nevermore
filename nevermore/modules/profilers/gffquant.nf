@@ -27,7 +27,7 @@ process stream_gffquant {
 			input_files += " --fastq-r2 \$(find . -maxdepth 1 -type l -name '*_R2.fastq.gz')"
 			input_files += " --fastq-orphans \$(find . -maxdepth 1 -type l -name '*singles*.fastq.gz')"
 	
-			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db gq_db.sqlite3 --reference ${reference} --aligner ${params.gq_aligner} ${input_files}"
+			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db gq_db.sqlite3 --reference \$(readlink ${reference}) --aligner ${params.gq_aligner} ${input_files}"
 
 			"""
 			set -e -o pipefail
