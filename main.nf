@@ -43,6 +43,7 @@ workflow {
 				sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
 				return tuple(sample_id, [fastqs].flatten())
 			}
+			.groupTuple()
 			gq_input_ch.view()
 			//.groupTuple(sort: true)
 
