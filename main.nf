@@ -43,7 +43,7 @@ workflow {
 				sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
 				return tuple(sample_id, [fastqs].flatten())
 			}
-			.groupTuple(sort: true)
+			//.groupTuple(sort: true)
 
 		} else {
 
