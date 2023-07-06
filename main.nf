@@ -44,6 +44,7 @@ workflow {
 				return tuple(sample_id, [fastqs].flatten())
 			}
 			.groupTuple()
+			.map { sample_id, fastqs -> return tuple(sample_id, fastqs.flatten()) }
 			gq_input_ch.view()
 			//.groupTuple(sort: true)
 
