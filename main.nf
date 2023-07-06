@@ -41,7 +41,7 @@ workflow {
 			gq_input_ch = nevermore_main.out.fastqs
 				.map { sample, fastqs ->
 				sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
-				return tuple(sample_id, fastqs)
+				return tuple(sample_id, [fastqs].flatten())
 			}
 			.groupTuple(sort: true)
 
