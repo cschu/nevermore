@@ -23,7 +23,7 @@ process stream_gffquant {
 			gq_params += (params.gq_keep_alignments) ? " --keep_alignment_file ${sample}.sam" : ""
 
 			def input_files = ""
-			input_files += "--fastq-r1 \$(find . -maxdepth 1 -type l -name '*_R1.fastq.gz')"
+			input_files += "--fastq-r1 \$(find . -maxdepth 1 -type l -name '*_R1.fastq.gz' | grep -v singles)"
 			input_files += " --fastq-r2 \$(find . -maxdepth 1 -type l -name '*_R2.fastq.gz')"
 			input_files += " --fastq-orphans \$(find . -maxdepth 1 -type l -name '*singles*.fastq.gz')"
 	
