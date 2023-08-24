@@ -2,7 +2,7 @@ process run_gffquant {
 	label "gffquant"
 
 	input:
-	tuple val(sample), path(alignments), path(readcounts)
+	tuple val(sample), path(alignments) //, path(readcounts)
 	path(gq_db)
 
 	output:
@@ -17,7 +17,7 @@ process run_gffquant {
 	gq_params += (params.gq_unmarked_orphans) ? " --unmarked_orphans" : ""
 	gq_params += (params.gq_min_seqlen) ? (" --min_seqlen " + params.gq_min_seqlen) : ""
 	gq_params += (params.gq_min_identity) ? (" --min_identity " + params.gq_min_identity) : ""
-	gq_params += (params.bam_input_pattern) ? " --import_readcounts \$(grep -o '[0-9]\\+' ${readcounts})" : ""
+	// gq_params += (params.bam_input_pattern) ? " --import_readcounts \$(grep -o '[0-9]\\+' ${readcounts})" : ""
 	gq_params += (params.gq_restrict_metrics) ? " --restrict_metrics ${params.gq_restrict_metrics}" : ""
 	gq_params += (params.bam_input_pattern || !params.large_reference) ? (" --format bam") : " --format sam"
 
