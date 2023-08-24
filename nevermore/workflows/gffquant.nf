@@ -55,7 +55,7 @@ workflow gffquant_flow {
 
 	emit:
 
-		counts
+		counts = run_gffquant.out.results
 		collated = collate_feature_counts.out.collated
 
 }
