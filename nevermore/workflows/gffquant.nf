@@ -1,4 +1,4 @@
-include { stream_gffquant; run_gffquant; collate_feature_counts; } from "../modules/profilers/gffquant"
+include { stream_gffquant; run_gffquant; collate_feature_counts } from "../modules/profilers/gffquant"
 
 params.gq_collate_columns = "uniq_scaled,combined_scaled"
 

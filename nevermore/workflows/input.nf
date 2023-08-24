@@ -121,7 +121,7 @@ workflow fastq_input {
 
 
 
-		fastq_ch.view()
+		// fastq_ch.view()
 
 	emit:
 		fastqs = fastq_ch

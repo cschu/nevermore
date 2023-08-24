@@ -230,6 +230,8 @@ def is_fastq(f, valid_fastq_suffixes, valid_compression_suffixes):
 
 	valid_compression = not compression_suffix or compression_suffix[0] in valid_compression_suffixes
 
+	logger.info('OBJECT: %s FASTQ: %s COMPRESSION: %s ISFILE: %s' % (f, fastq_suffix in valid_fastq_suffixes, valid_compression, os.path.isfile(f)))
+
 	return os.path.isfile(f) and valid_compression and fastq_suffix in valid_fastq_suffixes
 
 	# if not compression_suffix:
