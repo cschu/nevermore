@@ -21,6 +21,7 @@ process stream_gffquant {
 			gq_params += (params.gq_min_identity) ? (" --min_identity " + params.gq_min_identity) : ""
 			gq_params += (params.gq_restrict_metrics) ? " --restrict_metrics ${params.gq_restrict_metrics}" : ""
 			gq_params += (params.gq_keep_alignments) ? " --keep_alignment_file ${sample}.sam" : ""
+			gq_params += " -t ${task.cpus}"
 
 			def input_files = ""
 			input_files += "--fastq-r1 \$(find . -maxdepth 1 -type l -name '*_R1.fastq.gz' | grep -v singles)"
