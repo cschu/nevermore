@@ -86,7 +86,7 @@ workflow nevermore_prep_align {
 					}
 			)
 
-		merged_single_ch.view()
+		// merged_single_ch.view()
 		// merged_single_ch = single_ch
 		// 	.map { sample, fastq ->
 		// 		return tuple(

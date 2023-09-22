@@ -60,13 +60,14 @@ process remove_host_kraken2_individual {
 			((grep '^1' union.txt | cut -f 2 -d " ") || true) > chimeras.txt
 			((grep '^2' union.txt | cut -f 2 -d " ") || true) > pairs.txt
 
-			seqtk subseq ${sample.id}_1.fastq chimeras.txt | gzip -c - > chimeras.gz
-			seqtk subseq ${sample.id}_1.fastq <(sed "s:\$:/1:" chimeras.txt) | gzip -c - >> chimeras.gz
-			seqtk subseq ${sample.id}_2.fastq chimeras.txt | gzip -c - > chimeras.gz
-			seqtk subseq ${sample.id}_2.fastq <(sed "s:\$:/2:" chimeras.txt) | gzip -c - >> chimeras.gz
+			seqtk subseq ${sample.id}_1.fastq chimeras.txt >> chimeras.fastq
+			seqtk subseq ${sample.id}_1.fastq <(sed "s:\$:/1:" chimeras.txt) >> chimeras.fastq
+			seqtk subseq ${sample.id}_2.fastq chimeras.txt >> chimeras.fastq
+			seqtk subseq ${sample.id}_2.fastq <(sed "s:\$:/2:" chimeras.txt) >> chimeras.fastq
 
-			if [[ ! -z "\$(gzip -dc chimeras.gz | head -n 1)" ]]; then
-				mv chimeras.gz no_host/${sample.id}/${sample.id}.chimeras_R1.fastq.gz
+			if [[ ! -z "\$(head -n 1 chimeras.fastq)" ]]; then
+				mv chimeras.fastq no_host/${sample.id}/${sample.id}.chimeras_R1.fastq
+				gzip no_host/${sample.id}/${sample.id}.chimeras_R1.fastq
 			fi
 
 			seqtk subseq ${sample.id}_1.fastq pairs.txt | gzip -c - > no_host/${sample.id}/${sample.id}_R1.fastq.gz
@@ -75,7 +76,7 @@ process remove_host_kraken2_individual {
 			seqtk subseq ${sample.id}_2.fastq <(sed "s:\$:/2:" pairs.txt) | gzip -c - >> no_host/${sample.id}/${sample.id}_R2.fastq.gz
 
 			rm -f ${sample.id}_1.fastq ${sample.id}_2.fastq
-			rm -f chimeras.txt pairs.txt union.txt chimeras.gz
+			rm -f chimeras.txt pairs.txt union.txt
 		fi
 
 		touch no_host/${sample.id}/KRAKEN_FINISHED
