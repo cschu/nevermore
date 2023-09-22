@@ -23,6 +23,10 @@ process stream_gffquant {
 			gq_params += (params.gq_keep_alignments) ? " --keep_alignment_file ${sample}.sam" : ""
 			gq_params += " -t ${task.cpus}"
 
+			if (params.gq_mode == "domain") {
+				gq_params += " --db_separator , --db_coordinates hmmer"
+			}
+
 			def input_files = ""
 			// we cannot auto-detect SE vs. PE-orphan!
 			if (params.gq_single_end_library) {
