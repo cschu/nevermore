@@ -33,9 +33,9 @@ process stream_gffquant {
 				//input_files += "--singles \$(find . -maxdepth 1 -type l -name '*_R1.fastq.gz')"	
 				input_files += "--fastq-singles ${fastqs}"
 			} else {
-				r1_files = fastqs.findAll( { it.endsWith("_R1.fastq.gz") && !it.matches("(.*)singles(.*)") } )
-				r2_files = fastqs.findAll( { it.endsWith("_R2.fastq.gz") } )
-				orphans = fastqs.findAll( { it.matches("(.*)singles(.*)") } )
+				r1_files = fastqs.findAll( { it.name.endsWith("_R1.fastq.gz") && !it.name.matches("(.*)singles(.*)") } )
+				r2_files = fastqs.findAll( { it.name.endsWith("_R2.fastq.gz") } )
+				orphans = fastqs.findAll( { it.name.matches("(.*)singles(.*)") } )
 
 				if (r1_files.size() != 0) {
 					input_files += "--fastq-r1 ${r1_files}"
