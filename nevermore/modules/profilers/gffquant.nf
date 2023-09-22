@@ -24,19 +24,39 @@ process stream_gffquant {
 			gq_params += " -t ${task.cpus}"
 
 			def input_files = ""
-			input_files += "--fastq-r1 \$(find . -maxdepth 1 -type l -name '*_R1.fastq.gz' | grep -v singles)"
-			input_files += " --fastq-r2 \$(find . -maxdepth 1 -type l -name '*_R2.fastq.gz')"
-			input_files += " --fastq-orphans \$(find . -maxdepth 1 -type l -name '*singles*.fastq.gz')"
+			// we cannot auto-detect SE vs. PE-orphan!
+			if (params.gq_single_end_library) {
+				//input_files += "--singles \$(find . -maxdepth 1 -type l -name '*_R1.fastq.gz')"	
+				input_files += "--singles ${fastqs}"
+			} else {
+				def r1_files = fastqs.findAll( { it.endsWith("_R1.fastq.gz") && !it.matches("(.*)singles(.*)") } )
+				def r2_files = fastqs.findAll( { it.endsWith("_R2.fastq.gz") } )
+				def orphans = fastqs.findAll( { it.matches("(.*)singles(.*)") } )
+
+				if (r1_files.size() != 0) {
+					input_files += "--fastq-r1 ${r1_files}"
+				}
+				if (r2_files.size() != 0) {
+					input_files += " --fastq-r2 ${r2_files}"
+				}
+				if (orphans.size() != 0) {
+					input_files += " --fastq-orphans ${orphans}"
+				}
+
+				// input_files += "--fastq-r1 \$(find . -maxdepth 1 -type l -name '*_R1.fastq.gz' | grep -v singles)"
+				// input_files += " --fastq-r2 \$(find . -maxdepth 1 -type l -name '*_R2.fastq.gz')"
+				// input_files += " --fastq-orphans \$(find . -maxdepth 1 -type l -name '*singles*.fastq.gz')"
+			}
 	
-			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db gq_db.sqlite3 --reference \$(readlink ${reference}) --aligner ${params.gq_aligner} ${input_files}"
+			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db GQ_DATABASE --reference \$(readlink ${reference}) --aligner ${params.gq_aligner} ${input_files}"
 
 			"""
 			set -e -o pipefail
 			mkdir -p logs/ tmp/ profiles/
 			echo 'Copying database...'
-			cp -v ${gq_db} gq_db.sqlite3
+			cp -v ${gq_db} GQ_DATABASE
 			${gq_cmd} &> logs/${sample}.log
-			rm -rfv gq_db.sqlite3* tmp/
+			rm -rfv GQ_DATABASE* tmp/
 			"""
 
 }
