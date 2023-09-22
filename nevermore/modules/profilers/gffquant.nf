@@ -27,7 +27,7 @@ process stream_gffquant {
 			// we cannot auto-detect SE vs. PE-orphan!
 			if (params.gq_single_end_library) {
 				//input_files += "--singles \$(find . -maxdepth 1 -type l -name '*_R1.fastq.gz')"	
-				input_files += "--singles ${fastqs}"
+				input_files += "--fastq-singles ${fastqs}"
 			} else {
 				r1_files = fastqs.findAll( { it.endsWith("_R1.fastq.gz") && !it.matches("(.*)singles(.*)") } )
 				r2_files = fastqs.findAll( { it.endsWith("_R2.fastq.gz") } )
