@@ -38,13 +38,13 @@ process stream_gffquant {
 				orphans = fastqs.findAll( { it.name.matches("(.*)singles(.*)") } )
 
 				if (r1_files.size() != 0) {
-					input_files += "--fastq-r1 ${r1_files}"
+					input_files += "--fastq-r1 ${path(r1_files)}"
 				}
 				if (r2_files.size() != 0) {
-					input_files += " --fastq-r2 ${r2_files}"
+					input_files += " --fastq-r2 ${path(r2_files)}"
 				}
 				if (orphans.size() != 0) {
-					input_files += " --fastq-orphans ${orphans}"
+					input_files += " --fastq-orphans ${path(orphans)}"
 				}
 
 				// input_files += "--fastq-r1 \$(find . -maxdepth 1 -type l -name '*_R1.fastq.gz' | grep -v singles)"
