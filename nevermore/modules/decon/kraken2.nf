@@ -1,3 +1,6 @@
+params.decon.kraken2.min_hit_groups = 10
+
+
 process remove_host_kraken2 {
 	label 'kraken2'
 
@@ -12,7 +15,7 @@ process remove_host_kraken2 {
     def out_options = (sample.is_paired) ? "--paired --unclassified-out ${sample.id}#.fastq" : "--unclassified-out ${sample.id}_1.fastq"
     def move_r2 = (sample.is_paired) ? "gzip -c ${sample.id}_2.fastq > no_host/${sample.id}/${sample.id}_R2.fastq.gz" : ""
 
-	def kraken2_call = "kraken2 --threads $task.cpus --db ${kraken_db} --report-minimizer-data --gzip-compressed --minimum-hit-groups ${params.kraken2_min_hit_groups}"
+	def kraken2_call = "kraken2 --threads $task.cpus --db ${kraken_db} --report-minimizer-data --gzip-compressed --minimum-hit-groups ${params.decon.kraken2.min_hit_groups}"
 
     """
     mkdir -p no_host/${sample.id}
@@ -40,7 +43,7 @@ process remove_host_kraken2_individual {
 	tuple val(sample), path("no_host/${sample.id}/KRAKEN_FINISHED"), emit: sentinel
 
 	script:
-	def kraken2_call = "kraken2 --threads $task.cpus --db ${kraken_db} --report-minimizer-data --gzip-compressed --minimum-hit-groups ${params.kraken2_min_hit_groups}"
+	def kraken2_call = "kraken2 --threads $task.cpus --db ${kraken_db} --report-minimizer-data --gzip-compressed --minimum-hit-groups ${params.decon.kraken2.min_hit_groups}"
 
 	if (sample.is_paired) {
 		"""

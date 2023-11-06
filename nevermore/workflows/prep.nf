@@ -8,8 +8,8 @@ include { qc_bbmerge } from "../modules/qc/bbmerge"
 include { fastqc } from "../modules/qc/fastqc"
 include { multiqc } from "../modules/qc/multiqc"
 
-def merge_pairs = (params.merge_pairs || false)
-def keep_orphans = (params.keep_orphans || false)
+params.qc.keep_orphans = true
+
 
 def asset_dir = "${projectDir}/nevermore/assets"
 
@@ -50,7 +50,7 @@ workflow nevermore_simple_preprocessing {
 		orphans_ch = Channel.empty()
 		rawcounts_ch = fastqc.out.counts
 
-		if (params.amplicon_seq) {
+		if (params.qc.amplicon.run) {
 
 			qc_bbduk_stepwise_amplicon(fastq_ch, "${asset_dir}/adapters.fa")
 			processed_reads_ch = processed_reads_ch.concat(qc_bbduk_stepwise_amplicon.out.reads)
@@ -105,7 +105,7 @@ workflow nevermore_preprocessing {
 
 		/* merge_pairs implies that we want to keep the merged reads, which are 'longer single-ends' */
 
-		if (merge_pairs) {
+		if (params.qc.merge_pairs) {
 
 			/* attempt to merge the paired-end reads */
 
@@ -113,7 +113,7 @@ workflow nevermore_preprocessing {
 
 			/* join the orphans (potentially empty, s. a.) and the merged reads as all are single-end */
 
-			if (keep_orphans) {
+			if (params.qc.keep_orphans) {
 				single_reads_ch = orphan_reads_ch
 					.join(qc_bbmerge.out.merged, remainder: true)
 					.map { sample, orphans, merged ->
@@ -147,7 +147,7 @@ workflow nevermore_preprocessing {
 
 			single_out_ch = singlelib_reads_ch
 
-			if (keep_orphans) {
+			if (params.qc.keep_orphans) {
 
 				single_out_ch = single_out_ch
 					.concat(concat_singles.out.reads)

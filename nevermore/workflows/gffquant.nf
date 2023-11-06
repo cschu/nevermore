@@ -1,21 +1,7 @@
 include { stream_gffquant; run_gffquant; collate_feature_counts } from "../modules/profilers/gffquant"
 
-params.gq_collate_columns = "uniq_scaled,combined_scaled"
-
-
-// workflow gffquant_stream {
-// 	take:
-// 		fastq_ch
-// 	main:
-// 		gq_stream_ch = fastq_ch
-// 			.map {
-// 				sample, files -> return tuple(sample.id, files)
-// 			}
-// 		stream_gffquant(gq_stream_ch, params.gffquant_db)
-// 	emit:
-
-// }
-
+params.profilers.gffquant.collate_columns = "uniq_scaled,combined_scaled"
+params.profilers.gffquant.collate_gene_counts = true
 
 workflow gffquant_flow {
 
@@ -25,21 +11,32 @@ workflow gffquant_flow {
 
 	main:
 
-		if (params.gq_stream) {
-			stream_gffquant(input_ch, params.gffquant_db, params.reference)
+		if (params.profilers.gffquant.stream) {
+			gq_input_ch = input_ch
+				.map { sample, fastqs ->
+				sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
+				return tuple(sample_id, [fastqs].flatten())
+			}
+			.groupTuple()
+			.map { sample_id, fastqs -> return tuple(sample_id, fastqs.flatten()) }
+			
+			stream_gffquant(gq_input_ch, params.profilers.gffquant.db, params.profilers.gffquant.reference_index)
 			feature_count_ch = stream_gffquant.out.results
 			counts = stream_gffquant.out.results
+
 		} else {
-			run_gffquant(input_ch, params.gffquant_db)
+
+			run_gffquant(input_ch, params.profilers.gffquant.db)
 			feature_count_ch = run_gffquant.out.results
 			counts = run_gffquant.out.results
+
 		}
 
 		feature_count_ch = feature_count_ch
 			.map { sample, files -> return files }
 			.flatten()
 			.filter { !it.name.endsWith("Counter.txt.gz") }
-			.filter { params.collate_gene_counts || !it.name.endsWith("gene_counts.txt.gz") }
+			.filter { params.profilers.gffquant.collate_gene_counts || !it.name.endsWith("gene_counts.txt.gz") }
 			.map { file -> 
 				def category = file.name
 					.replaceAll(/\.txt\.gz$/, "")
@@ -48,14 +45,14 @@ workflow gffquant_flow {
 			}
 			.groupTuple(sort: true)
 			.combine(
-				Channel.from(params.gq_collate_columns.split(","))
+				Channel.from(params.profilers.gffquant.collate_columns.split(","))
 			)
 
 		collate_feature_counts(feature_count_ch)
 
 	emit:
 
-		counts // = run_gffquant.out.results
+		counts
 		collated = collate_feature_counts.out.collated
 
 }

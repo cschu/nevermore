@@ -19,9 +19,9 @@ process qc_bbduk {
     def read2 = ""
     def orphan_check = ""
 
-    def bb_params = params.qc_params_shotgun //.replaceAll(/maq=([0-9]+)/, "")
+    def bb_params = params.qc.shotgun.params //.replaceAll(/maq=([0-9]+)/, "")
     
-    def trim_params = "${bb_params} ref=${adapters} minlen=${params.qc_minlen}"
+    def trim_params = "${bb_params} ref=${adapters} minlen=${params.qc.shotgun.minlen}"
 
     def orphan_filter = ""
     

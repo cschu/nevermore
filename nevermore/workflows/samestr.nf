@@ -1,6 +1,6 @@
 include { run_samestr_convert; run_samestr_merge; run_samestr_filter; run_samestr_stats; run_samestr_compare; run_samestr_summarize } from "../modules/profilers/samestr"
 
-params.samestr_marker_db = "/scratch/schudoma/databases/samestr/mpa_vOct22_CHOCOPhlAnSGB_202212/marker_db/"
+params.profilers.samestr.marker_db = "/scratch/schudoma/databases/samestr/mpa_vOct22_CHOCOPhlAnSGB_202212/marker_db/"
 
 workflow samestr {
     take:
@@ -9,7 +9,7 @@ workflow samestr {
     main:
         run_samestr_convert(
 			samestr_convert_ch,
-			params.samestr_marker_db
+			params.profilers.samestr.marker_db
 		)
 
         Channel
@@ -25,7 +25,7 @@ workflow samestr {
 		run_samestr_merge(grouped_npy_ch)
 		run_samestr_filter(
 			run_samestr_merge.out.sstr_npy
-			params.samestr_marker_db
+			params.profilers.samestr.marker_db
 		)
 		run_samestr_stats(run_samestr_filter.out.sstr_npy)
 		run_samestr_compare(run_samestr_filter.out.sstr_npy)

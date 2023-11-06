@@ -1,3 +1,5 @@
+params.input.pacbio_reads = false
+
 process fq2fa {
     input:
     tuple val(sample), path(fq)
@@ -9,7 +11,7 @@ process fq2fa {
 	def maxmem = task.memory.toGiga()
 	def r2 = (sample.is_paired) ? "in2=${sample.id}_R2.fastq.gz out2=out/${sample.id}_R2.fasta" : ""
 	def qual_modifier = ""
-	if (params.pb_reads) {
+	if (params.input.pacbio_reads) {
 		qual_modifier = "qin=33"
 	}
 

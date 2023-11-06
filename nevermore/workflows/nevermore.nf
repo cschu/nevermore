@@ -10,9 +10,6 @@ include { multiqc } from "../modules/qc/multiqc"
 include { collate_stats } from "../modules/collate"
 include { nevermore_align; nevermore_prep_align } from "./align"
 
-def do_preprocessing = (!params.skip_preprocessing || params.run_preprocessing)
-def do_alignment = params.run_gffquant || !params.skip_alignment
-def do_stream = params.gq_stream
 
 workflow nevermore_main {
 
@@ -21,25 +18,21 @@ workflow nevermore_main {
 		
 
 	main:
-		if (do_preprocessing) {
-	
-			//prepare_fastqs(fastq_ch)
-	
-			//raw_fastq_ch = prepare_fastqs.out.reads
+		if (params.qc.run) {
 	
 			nevermore_simple_preprocessing(fastq_ch)
 	
 			preprocessed_ch = nevermore_simple_preprocessing.out.main_reads_out
-			if (!params.drop_orphans) {
+			if (params.qc.keep_orphans) {
 				preprocessed_ch = preprocessed_ch.concat(nevermore_simple_preprocessing.out.orphan_reads_out)
 			}
 	
-			if (params.remove_host) {
+			if (params.decon.run) {
 	
-				remove_host_kraken2_individual(preprocessed_ch, params.remove_host_kraken2_db)
+				remove_host_kraken2_individual(preprocessed_ch, params.decon.kraken2.db)
 	
 				preprocessed_ch = remove_host_kraken2_individual.out.reads
-				if (!params.drop_chimeras) {
+				if (params.decon.keep_chimeras) {
 					chimera_ch = remove_host_kraken2_individual.out.chimera_orphans
 						.map { sample, file ->
 							def meta = [:]
@@ -63,7 +56,7 @@ workflow nevermore_main {
 		align_ch = Channel.empty()
 		collate_ch = Channel.empty()
 
-		if (do_preprocessing) {
+		if (params.qc.run) {
 			collate_ch = nevermore_simple_preprocessing.out.raw_counts
 			.map { sample, file -> return file }
 			.collect()
@@ -74,11 +67,11 @@ workflow nevermore_main {
 			)
 		}
 
-		if (!do_stream && do_alignment) {
+		if (params.align_run || (params.profilers.gffquant.run && !params.profilers.gffquant.stream)) {
 			nevermore_align(nevermore_prep_align.out.fastqs)
 			align_ch = nevermore_align.out.alignments
 	
-			if (do_preprocessing) {		
+			if (params.qc.run) {		
 				collate_ch = collate_ch	
 					.concat(
 						nevermore_align.out.aln_counts
@@ -88,7 +81,7 @@ workflow nevermore_main {
 			}
 		}
 
-		if (do_preprocessing) {
+		if (params.qc.run) {
 			collate_stats(collate_ch.collect())
 		}
 

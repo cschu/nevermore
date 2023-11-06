@@ -1,6 +1,5 @@
 process multiqc {
-    // publishDir params.output_dir, mode: params.publish_mode
-
+    
     input:
     path(reports)
 	path(multiqc_config)

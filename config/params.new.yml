@@ -1,0 +1,80 @@
+input:
+  local_dir: null
+  remote_dir: null
+  ignore_dirs: null
+  pacbio_reads: false
+  bam_input_pattern: null
+  large_reference: null
+  remove_file_suffix: null
+  custom_fastq_file_suffixes: null
+  do_bam2fq_conversion: false
+
+comms:
+  notify: null
+  mailer: "/usr/bin/mail"  
+
+output:
+  directory: "output"
+
+profilers:
+  gffquant:
+    run: true
+    stream: true
+    db: null
+    aligner: "bwa"
+    mode: "gene"
+    ambig_mode: "1overN"
+    strand_specific: null
+    single_end_library: false
+    do_name_sort: null
+    min_seqlen: 45
+    min_identity: 0.97
+    restrict_metrics: ""
+    keep_alignments: false
+    reference_index: null
+    collate_columns: "uniq_scaled,combined_scaled"
+    collate_gene_counts: true
+  metaphlan3:
+    run: false
+    db: null
+    db_version: null
+    params: null
+  metaphlan4:
+    run: false
+    db: null
+    samestr_compatible_output: false
+  samestr:
+    run: false
+    marker_db: null
+  motus:
+    run: false
+    db: null
+    tax_level: "mOTU"
+    min_length: 75
+    n_marker_genes: 3
+
+decon:
+  run: false
+  keep_chimeras: false
+  kraken2:
+    min_hit_groups: 10
+    db: "/scratch/schudoma/databases/kraken2/hg38_silva_genome"
+
+align:
+  run: false
+  reference_index: null
+
+qc:
+  run: true
+  keep_orphans: true
+  amplicon:
+    run: false
+    primers: null
+    minlen: 45
+    p5_primer_params: "cu=t qtrim=rl ktrim=l trimq=3 k=9 mink=1 hdist=1 restrictleft=50"
+    p3_primer_params: "cu=t ktrim=r k=9 mink=1 hdist=1 restrictright=50"
+    long_reads: false
+    single_end: false
+  shotgun:
+    params: "qtrim=rl trimq=3 maq=25 ktrim=r k=23 mink=11 hdist=1 ftm=5 entropy=0.5 entropywindow=50 entropyk=5 tpe tbo"
+    minlen: 45
