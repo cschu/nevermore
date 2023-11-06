@@ -6,7 +6,7 @@ process fastqc {
 
     output:
     tuple val(sample), path("stats/${stage}/fastqc/*/*fastqc_data.txt"), emit: stats
-    tuple val(sample), path("stats/${stage}/read_counts/${sample.id}.${stage}.txt"), emit: counts
+    tuple val(sample), path("stats/${stage}/read_counts/*.${stage}.txt"), emit: counts
 
     script:
     def compression = (reads[0].name.endsWith(".gz")) ? "gz" : "bz2"

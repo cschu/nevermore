@@ -98,6 +98,7 @@ def process_sample(
 	sample, fastqs, output_dir,
 	fastq_suffix_pattern,
 	remove_suffix=None, remote_input=False,
+	add_suffix=None,
 ):
 	""" Checks if a set of fastq files in a directory is a valid collection
 	and transfers files to a destination dir upon success.
@@ -117,7 +118,10 @@ def process_sample(
 		# - this might be a temporary fix, but @93a73d0
 		# single-end samples without .singles-suffix cause problems 
 		# with fastqc results in the collate step
+		if add_suffix:
+			sample_sub += f".{add_suffix}"
 		sample = sample_sub + ".singles"
+
 		sample_dir = os.path.join(output_dir, sample)
 		pathlib.Path(sample_dir).mkdir(parents=True, exist_ok=True)
 
@@ -178,6 +182,9 @@ def process_sample(
 		print("R1", r1, file=sys.stderr)
 		print("R2", r2, file=sys.stderr)
 		print("others", others, file=sys.stderr, flush=True)
+
+		if add_suffix:
+			sample += f".{add_suffix}"
 
 		sample_dir = os.path.join(output_dir, sample)
 
@@ -258,6 +265,7 @@ def main():
 	ap.add_argument("--remove-suffix", type=str, default=None)
 	ap.add_argument("--valid-fastq-suffixes", type=str, default="fastq,fq")
 	ap.add_argument("--valid-compression-suffixes", type=str, default="gz,bz2")
+	ap.add_argument("--add_sample_suffix", type=str)
 
 	args = ap.parse_args()
 
@@ -313,7 +321,8 @@ def main():
 				renamed = process_sample(
 					sample, fastqs, args.output_dir,
 					fastq_file_suffix_pattern,
-					remove_suffix=args.remove_suffix, remote_input=args.remote_input
+					remove_suffix=args.remove_suffix, remote_input=args.remote_input,
+					add_suffix=args.add_sample_suffix,
 				)
 			except Exception as e:
 				raise ValueError(f"Encountered problems processing sample '{sample}': {e}.\nPlease check your file names.")

@@ -4,6 +4,7 @@ nextflow.enable.dsl=2
 
 include { nevermore_simple_preprocessing } from "./prep"
 include { remove_host_kraken2_individual; remove_host_kraken2 } from "../modules/decon/kraken2"
+include { sortmerna } from "../modules/decon/sortmerna"
 include { prepare_fastqs } from "../modules/converters/prepare_fastqs"
 include { fastqc } from "../modules/qc/fastqc"
 include { multiqc } from "../modules/qc/multiqc"
@@ -26,6 +27,21 @@ workflow nevermore_main {
 			if (params.qc.keep_orphans) {
 				preprocessed_ch = preprocessed_ch.concat(nevermore_simple_preprocessing.out.orphan_reads_out)
 			}
+
+			if (params.run_sortmerna) {
+
+				preprocessed_ch
+					.branch {
+						metaT: it[0].library_type == "metaT"
+						metaG: true
+					}
+					.set { for_sortmerna_ch }
+
+				sortmerna(for_sortmerna_ch.metaT, params.sortmerna_db)
+				preprocessed_ch = for_sortmerna_ch.metaG
+					.concat(sortmerna.out.fastqs)
+
+			}
 	
 			if (params.decon.run) {
 	
@@ -35,10 +51,9 @@ workflow nevermore_main {
 				if (params.decon.keep_chimeras) {
 					chimera_ch = remove_host_kraken2_individual.out.chimera_orphans
 						.map { sample, file ->
-							def meta = [:]
+							def meta = sample.clone()
 							meta.id = sample.id + ".chimeras"
 							meta.is_paired = false
-							meta.library = sample.library
 							return tuple(meta, file)
 						}
 					preprocessed_ch = preprocessed_ch.concat(chimera_ch)
@@ -67,7 +82,7 @@ workflow nevermore_main {
 			)
 		}
 
-		if (params.align_run || (params.profilers.gffquant.run && !params.profilers.gffquant.stream)) {
+		if (params.align.run || (params.profilers.gffquant.run && !params.profilers.gffquant.stream)) {
 			nevermore_align(nevermore_prep_align.out.fastqs)
 			align_ch = nevermore_align.out.alignments
 	
@@ -81,7 +96,7 @@ workflow nevermore_main {
 			}
 		}
 
-		if (params.qc.run) {
+		if (params.qc.run && params.qc.generate_reports) {
 			collate_stats(collate_ch.collect())
 		}
 

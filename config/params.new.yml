@@ -59,6 +59,7 @@ decon:
   kraken2:
     min_hit_groups: 10
     db: "/scratch/schudoma/databases/kraken2/hg38_silva_genome"
+    fix_read_ids: false
 
 align:
   run: false
@@ -67,6 +68,7 @@ align:
 qc:
   run: true
   keep_orphans: true
+  generate_reports: true
   amplicon:
     run: false
     primers: null

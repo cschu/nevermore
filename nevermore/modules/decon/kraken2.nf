@@ -45,6 +45,12 @@ process remove_host_kraken2_individual {
 	script:
 	def kraken2_call = "kraken2 --threads $task.cpus --db ${kraken_db} --report-minimizer-data --gzip-compressed --minimum-hit-groups ${params.decon.kraken2.min_hit_groups}"
 
+	fix_read_id_str = ""
+	if (params.decon.fix_read_ids) {
+		fix_read_id_str += "seqtk rename ${sample.id}_1.fastq read | cut -f 1 -d ' ' > ${sample.id}_1.fastq.renamed && mv -v ${sample.id}_1.fastq.renamed ${sample.id}_1.fastq\n"
+		fix_read_id_str += "seqtk rename ${sample.id}_2.fastq read | cut -f 1 -d ' ' > ${sample.id}_2.fastq.renamed && mv -v ${sample.id}_2.fastq.renamed ${sample.id}_2.fastq\n"
+	}
+
 	if (sample.is_paired) {
 		"""
 		set -e -o pipefail
@@ -56,6 +62,9 @@ process remove_host_kraken2_individual {
 		${kraken2_call} --unclassified-out ${sample.id}_2.fastq --output stats/decon/${sample.id}.kraken_read_report_2.txt --report stats/decon/${sample.id}.kraken_report_2.txt ${sample.id}_R2.fastq.gz
 
 		if [[ -f ${sample.id}_1.fastq || -f ${sample.id}_2.fastq ]]; then
+
+			${fix_read_id_str}
+
 			mkdir -p tmp/
 			awk 'NR%4==1' *.fastq | sed 's/^@//' | cut -f 1 -d ' ' | sed 's/\\/[12]//' | sort -T tmp/ | uniq -c | sed 's/^\\s\\+//' > union.txt
 			rm -rf tmp/

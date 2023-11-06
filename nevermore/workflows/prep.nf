@@ -37,18 +37,20 @@ workflow nevermore_simple_preprocessing {
 		fastq_ch
 
 	main:
+		rawcounts_ch = Channel.empty()
+		if (params.qc.generate_reports) {
+			fastqc(fastq_ch, "raw")
 
-		fastqc(fastq_ch, "raw")
-
-        multiqc(
-            fastqc.out.stats.map { sample, report -> report }.collect(),
-			"${asset_dir}/multiqc.config",
-			"raw"
-        )
+			multiqc(
+				fastqc.out.stats.map { sample, report -> report }.collect(),
+				"${asset_dir}/multiqc.config",
+				"raw"
+			)
+			rawcounts_ch = fastqc.out.counts
+		}
 
 		processed_reads_ch = Channel.empty()
 		orphans_ch = Channel.empty()
-		rawcounts_ch = fastqc.out.counts
 
 		if (params.qc.amplicon.run) {
 
@@ -62,10 +64,9 @@ workflow nevermore_simple_preprocessing {
 			processed_reads_ch = processed_reads_ch.concat(qc_bbduk.out.reads)
 			orphans_ch = qc_bbduk.out.orphans
 				.map { sample, file -> 
-					def meta = [:]
+					def meta = sample.clone()
 					meta.id = sample.id + ".orphans"
 					meta.is_paired = false
-					meta.library = sample.library
 					return tuple(meta, file)
 				}
 

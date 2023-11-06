@@ -12,5 +12,5 @@ def get_single_input_dir {
 		""".stripIndent()
 		exit 1
 	}
-	return (params.input_dir) ? params.input_dir : params.remote_input_dir
+	return (params.input.local_dir) ? params.input.local_dir : params.input.remote_dir
 }
