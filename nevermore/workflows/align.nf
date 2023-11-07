@@ -57,7 +57,10 @@ workflow nevermore_prep_align {
 			}
 		.set { single_reads_ch }
 
-		def se_group_size = 3 - (params.drop_chimeras ? 1 : 0) - (params.drop_orphans ? 1 : 0)
+		def expect_orphans = params.qc.run && params.qc.keep_orphans
+		def expect_chimeras = params.qc.run && params.decon.run && params.decon.keep_chimeras
+
+		def se_group_size = 3 - (expect_orphans ? 0 : 1) - (expect_chimeras ? 0 : 1)
 
 		single_reads_ch.paired_end
 			.groupTuple(sort: true, size: se_group_size, remainder: true)
@@ -68,68 +71,6 @@ workflow nevermore_prep_align {
 			.set { pe_singles_ch }
 
 		merged_single_ch = pe_singles_ch.merge
-		
-
-
-			// .map { sample, fastq  ->
-			// 	return tuple(sample.id, fastq)
-			// }
-			// .map { sample_id, files ->
-			// 	def meta = [:]
-			// 	meta.id = sample_id
-			// 	meta.is_paired = false
-			// 	meta.library = "paired"
-			// 	meta.merged = true
-			// 	return tuple(meta, files)
-			// }
-
-		// merged_single_ch = single_reads_ch.single_end
-		// 	.map { sample, fastq  ->
-		// 		return tuple(sample.id, fastq)
-		// 	}
-		// 	.groupTuple(sort: true)
-		// 	.map { sample_id, files ->
-		// 		def meta = [:]
-		// 		meta.id = sample_id
-		// 		meta.is_paired = false
-		// 		meta.library = "single"
-		// 		meta.merged = true
-		// 		return tuple(meta, files)
-		// 	}
-		// 	.concat(
-		// 		single_reads_ch.paired_end
-		// 			.map { sample, fastq  ->
-		// 				return tuple(sample.id, fastq)
-		// 			}
-		// 			.groupTuple(sort: true)
-		// 			.map { sample_id, files ->
-		// 				def meta = [:]
-		// 				meta.id = sample_id
-		// 				meta.is_paired = false
-		// 				meta.library = "paired"
-		// 				meta.merged = true
-		// 				return tuple(meta, files)
-		// 			}
-		// 	)
-
-		// merged_single_ch.view()
-		// merged_single_ch = single_ch
-		// 	.map { sample, fastq ->
-		// 		return tuple(
-		// 			sample.id.replaceAll(/.(orphans|singles|chimeras)$/, ".singles"),
-		// 			sample.library,
-		// 			fastq
-		// 		)
-		// 	}
-		// 	.groupTuple(sort: true)
-		// 	.map { sample_id, library, files ->
-		// 		def meta = [:]
-		// 		meta.id = sample_id
-		// 		meta.is_paired = false
-		// 		meta.library = library
-		// 		meta.merged = true
-		// 		return tuple(meta, files)
-		// 	}
 
 		/*	then merge single-read file groups into single files */
 
@@ -193,7 +134,7 @@ workflow nevermore_align {
 
 		bwa_mem_align(
 			fastq_ch,
-			params.reference,
+			params.align.reference_index,
 			true
 		)
 

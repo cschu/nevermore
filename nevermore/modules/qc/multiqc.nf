@@ -1,6 +1,5 @@
 process multiqc {
-    // publishDir params.output_dir, mode: params.publish_mode
-
+    
     input:
     path(reports)
 	path(multiqc_config)
@@ -10,7 +9,7 @@ process multiqc {
     path("reports/${stage}.multiqc_report.html")
 
     script:
-    def send_report = (false && params.email && params.mailer) ? "echo . | ${params.mailer} -s 'multiqc_report' -a reports/${stage}.multiqc_report.html ${params.email}" : ""
+    def send_report = (false && params.comms.email && params.comms.mailer) ? "echo . | ${params.comms.mailer} -s 'multiqc_report' -a reports/${stage}.multiqc_report.html ${params.comms.email}" : ""
     """
 	mkdir -p reports/
     multiqc -o reports/ -n ${stage}.multiqc_report.html -c ${multiqc_config} .

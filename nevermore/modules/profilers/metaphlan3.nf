@@ -6,25 +6,22 @@ process run_metaphlan3 {
 
 	output:
 	tuple val(sample), path("metaphlan3_tables/${sample.id}.mp3.txt"), emit: mp3_table
-	// tuple val(sample), path("${sample.id}.bowtie2.bz2"), emit: mp3_bt2
 	
 	script:
-	def mp3_params = "--index ${params.mp3_db_version} --bowtie2db \$(readlink ${mp3_db}) --input_type fastq --nproc ${task.cpus} --tmp_dir tmp/"
+	def mp3_params = "--index ${params.profilers.metaphlan3.db_version} --bowtie2db \$(readlink ${params.profilers.metaphlan3.db}) --input_type fastq --nproc ${task.cpus} --tmp_dir tmp/"
 	def mp3_input = ""
 	def bt2_out = "--bowtie2out ${sample.id}.bowtie2.bz2"
 
 	
 	if (fastqs instanceof Collection && fastqs.size() >= 2) {
 		mp3_input = "${sample.id}_R1.fastq.gz,${sample.id}_R2.fastq.gz"
-	// } else if (fastqs instanceof Collection && fastqs.size() == 3) {
-	// 	mp3_input = "${sample.id}_R1.fastq.gz,${sample.id}_R2.fastq.gz,${sample.id}.singles_R1.fastq.gz"
 	} else {
 		mp3_input = "${fastqs}"
 	}
 
 	def additional_mp3_params = ""
-	if (params.mp3_params) {
-		additional_mp3_params = params.mp3_params
+	if (params.profilers.metaphlan3.params) {
+		additional_mp3_params = params.profilers.metaphlan3.params
 	}
 
 

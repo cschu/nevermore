@@ -2,14 +2,9 @@ nextflow.enable.dsl=2
 
 include { classify_sample; classify_sample_with_library_info } from "../modules/functions"
 
+params.input.bam_input_pattern = "**.bam"
 
-if (!params.bam_input_pattern) {
-	params.bam_input_pattern = "**.bam"
-}
-
-def bam_suffix_pattern = params.bam_input_pattern.replaceAll(/\*/, "")
-
-def input_dir = (params.input_dir) ? params.input_dir : params.remote_input_dir
+def bam_suffix_pattern = params.input.bam_input_pattern.replaceAll(/\*/, "")
 
 
 process transfer_fastqs {
@@ -49,22 +44,16 @@ process prepare_fastqs {
 
   script:
 		def remote_option = (remote_input) ? "--remote-input" : ""
-		def remove_suffix = (params.suffix_pattern) ? "--remove-suffix ${params.suffix_pattern}" : ""
-		def input_dir_prefix = (params.input_dir) ? params.input_dir : params.remote_input_dir
+		def remove_suffix = (params.input.remove_file_suffix) ? "--remove-suffix ${params.input.remove_file_suffix}" : ""
+		def input_dir_prefix = (params.input.local_dir) ? params.input.local_dir : params.input.remote_dir
 
-		def custom_suffixes = (params.custom_fastq_file_suffixes) ? "--valid-fastq-suffixes ${params.custom_fastq_file_suffixes}" : ""
-
+		def custom_suffixes = (params.input.custom_fastq_file_suffixes) ? "--valid-fastq-suffixes ${params.input.custom_fastq_file_suffixes}" : ""
 		def libsfx_param = (library_suffix != null) ? "--add_sample_suffix ${library_suffix}" : ""
 		
 		"""
 		prepare_fastqs.py -i . -o fastq/ -p ${input_dir_prefix} ${custom_suffixes} ${remote_option} ${remove_suffix} ${libsfx_param}
 		"""
 }
-
-
-
-
-
 
 
 workflow remote_fastq_input {
@@ -98,7 +87,7 @@ workflow fastq_input {
 		libsfx
 	
 	main:
-		prepare_fastqs(fastq_ch.collect(), (params.remote_input_dir != null || params.remote_input_dir), libsfx)
+		prepare_fastqs(fastq_ch.collect(), (params.input.remote_dir != null || params.input.remote_dir), libsfx)
 
 		library_info_ch = prepare_fastqs.out.library_info
 			.splitCsv(header:false, sep:'\t', strip:true)
@@ -137,7 +126,7 @@ workflow bam_input {
 		bam_ch
 	main:
 
-		if (params.remote_input_dir) {
+		if (params.input.remote_dir) {
 			bam_ch = remote_bam_input(bam_ch.collect())
 		}
 
@@ -149,7 +138,7 @@ workflow bam_input {
 			.groupTuple(sort: true)
 			.map { classify_sample(it[0], it[1]) }
 
-		if (params.do_bam2fq_conversion) {
+		if (params.input.do_bam2fq_conversion) {
 			bam2fq(bam_ch)
 			bam_ch = bam2fq.out.reads
 				.map { classify_sample(it[0].id, it[1]) }

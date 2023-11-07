@@ -1,11 +1,9 @@
-params.motus_tax_level = "mOTU"
-params.motus_min_length = 75
-params.motus_n_marker_genes = 3
+params.profilers.motus.tax_level = "mOTU"
+params.profilers.motus.min_length = 75
+params.profilers.motus.n_marker_genes = 3
 
 
-process motus {
-    publishDir params.output_dir, mode: params.publish_mode
-
+process motus {    
     input:
     tuple val(sample), path(reads)
 	path(motus_db)
@@ -17,6 +15,6 @@ process motus {
     def motus_input = (sample.is_paired) ? "-f ${sample.id}_R1.fastq.gz -r ${sample.id}_R2.fastq.gz" : "-s ${sample.id}_R1.fastq.gz";
     """
     mkdir -p ${sample.id}
-    motus profile -t $task.cpus -k ${params.motus_tax_level} -c -v 7 -q -l ${params.motus_min_length} -g ${params.motus_n_marker_genes} -db ${motus_db} ${motus_input} > ${sample.id}/${sample.id}.motus.txt
+    motus profile -t $task.cpus -k ${params.profilers.motus.tax_level} -c -v 7 -q -l ${params.profilers.motus.min_length} -g ${params.profilers.motus.n_marker_genes} -db ${motus_db} ${motus_input} > ${sample.id}/${sample.id}.motus.txt
     """
 }

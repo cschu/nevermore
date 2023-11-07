@@ -15,18 +15,18 @@ process qc_bbduk_stepwise_amplicon {
 	def maxmem = task.memory.toGiga()
 	def compression = (reads[0].name.endsWith(".gz")) ? "gz" : "bz2"
 
-	if (params.primers) {
-		trim_params = "literal=${params.primers} minlength=${params.qc_minlen}"
+	if (params.qc.amplicon.primers) {
+		trim_params = "literal=${params.qc.amplicon.primers} minlength=${params.qc.amplicon.minlen}"
 	} else {
-		trim_params = "ref=${adapters} minlength=${params.qc_minlen}"
+		trim_params = "ref=${adapters} minlength=${params.qc.amplicon.minlen}"
 	}
 
 	def bbduk_call = "bbduk.sh -Xmx${maxmem}g t=${task.cpus} ordered=t trd=t"
 
-	ref_p5_r1 = (params.primers) ? "literal=" + params.primers.split(",")[0] : "ref=${adapters}"
-	ref_p5_r2 = (params.primers && !sample.is_paired) ? "literal=" + params.primers.split(",")[1] : "ref=${adapters}"
-	ref_p3_r1 = ref_p5_r2
-	ref_p3_r2 = ref_p5_r1
+	def ref_p5_r1 = (params.qc.amplicon.primers) ? "literal=" + params.qc.amplicon.primers.split(",")[0] : "ref=${adapters}"
+	def ref_p5_r2 = (params.qc.amplicon.primers && !sample.is_paired) ? "literal=" + params.qc.amplicon.primers.split(",")[1] : "ref=${adapters}"
+	def ref_p3_r1 = ref_p5_r2
+	def ref_p3_r2 = ref_p5_r1
 
 	def bbduk_full_call = ""
 	def downstream_call = ""
@@ -34,13 +34,13 @@ process qc_bbduk_stepwise_amplicon {
 
 	if (sample.is_paired) {
 
-		bbduk_full_call += "${bbduk_call} ${ref_p5_r1} minlength=${params.qc_minlen} ${params.p5_primer_params} in1=${sample.id}_R1.fastq.${compression} out1=fwd_p5.fastq.gz\n"
-		bbduk_full_call += "${bbduk_call} ${ref_p5_r2} minlength=${params.qc_minlen} ${params.p5_primer_params} in1=${sample.id}_R2.fastq.${compression} out1=rev_p5.fastq.gz\n"
+		bbduk_full_call += "${bbduk_call} ${ref_p5_r1} minlength=${params.qc.amplicon.minlen} ${params.qc.amplicon.p5_primer_params} in1=${sample.id}_R1.fastq.${compression} out1=fwd_p5.fastq.gz\n"
+		bbduk_full_call += "${bbduk_call} ${ref_p5_r2} minlength=${params.qc.amplicon.minlen} ${params.qc.amplicon.p5_primer_params} in1=${sample.id}_R2.fastq.${compression} out1=rev_p5.fastq.gz\n"
 
-		if (params.long_reads) {
+		if (params.qc.amplicon.long_reads) {
 
-			bbduk_full_call += "${bbduk_call} ${ref_p3_r1} minlength=${params.qc_minlen} ${params.p3_primer_params} in1=fwd_p5.fastq.gz out1=fwd.fastq.gz\n"
-			bbduk_full_call += "${bbduk_call} ${ref_p3_r2} minlength=${params.qc_minlen} ${params.p3_primer_params} in1=rev_p5.fastq.gz out1=rev.fastq.gz\n"
+			bbduk_full_call += "${bbduk_call} ${ref_p3_r1} minlength=${params.qc.amplicon.minlen} ${params.qc.amplicon.p3_primer_params} in1=fwd_p5.fastq.gz out1=fwd.fastq.gz\n"
+			bbduk_full_call += "${bbduk_call} ${ref_p3_r2} minlength=${params.qc.amplicon.minlen} ${params.qc.amplicon.p3_primer_params} in1=rev_p5.fastq.gz out1=rev.fastq.gz\n"
 
 		} else {
 			bbduk_full_call += "mv fwd_p5.fastq.gz fwd.fastq.gz\nmv rev_p5.fastq.gz rev.fastq.gz\n"
