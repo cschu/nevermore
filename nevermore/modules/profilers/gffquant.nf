@@ -78,6 +78,7 @@ process stream_gffquant {
 
 process run_gffquant {
 	label "gffquant"
+	tag "gffquant.${sample}"
 
 	input:
 	tuple val(sample), path(alignments)
@@ -91,13 +92,13 @@ process run_gffquant {
 	def gq_output = "-o profiles/${sample}/${sample}"
 
 	def gq_params = compile_param_string(sample, task.cpus, true)
-	
-	def gq_cmd = "gffquant ${gq_output} ${gq_params} gq_db.sqlite3"
+
+	def gq_cmd = "gffquant ${gq_output} ${gq_params} GQ_DATABASE"
 
 	def mk_aln_sam = ""
 	if (params.input.bam_input_pattern && params.profilers.gffquant.do_name_sort) {
 
-		gq_cmd = "samtools collate -@ ${task.cpus} -O ${alignments} tmp/collated_bam | ${gq_cmd} -"		
+		gq_cmd = "samtools collate -@ ${task.cpus} -O ${alignments} tmp/collated_bam | ${gq_cmd} --bam -"
 
 	} else if (params.input.large_reference) {
 
@@ -108,11 +109,11 @@ process run_gffquant {
 		} else {
 			mk_aln_sam += "ln -s ${alignments[0]} tmp/alignments.sam"
 		}
-		gq_cmd = "cat tmp/alignments.sam | ${gq_cmd} -"
+		gq_cmd = "cat tmp/alignments.sam | ${gq_cmd} --sam -"
 
 	} else {
 
-		gq_cmd = "${gq_cmd} ${alignments}"
+		gq_cmd = "${gq_cmd} --bam ${alignments}"
 
 	}
 
@@ -120,10 +121,10 @@ process run_gffquant {
 	set -e -o pipefail
 	mkdir -p logs/ tmp/ profiles/
 	echo 'Copying database...'
-	cp -v ${gq_db} gq_db.sqlite3
+	cp -v ${gq_db} GQ_DATABASE
 	${mk_aln_sam}
 	${gq_cmd} &> logs/${sample}.log
-	rm -rfv gq_db.sqlite3* tmp/
+	rm -rfv GQ_DATABASE* tmp/
 	"""
 }
 
