@@ -8,20 +8,38 @@ process sortmerna {
 	script:
 		def mem_mb = task.memory.toMega()
 
-		def reads = "--reads ${sample.id}_R1.fastq.gz"
-		// def mv_output = "gzip -vc work/other_fwd.fq > no_rrna/${sample.id}/${sample.id}_R1.fastq.gz\n"
+		def reads = ""
 		def mv_output = ""
 		def pe_params = ""
-		
-		if (sample.is_paired) {
-			reads += " --reads ${sample.id}_R2.fastq.gz"
-			// mv_output += "gzip -vc work/other_rev.fq > no_rrna/${sample.id}/${sample.id}_R2.fastq.gz\n"
-			mv_output += "mv -v work/out/other_fwd.fq.gz no_rrna/${sample.id}/${sample.id}_R1.fastq.gz\n"
-			mv_output += "mv -v work/out/other_rev.fq.gz no_rrna/${sample.id}/${sample.id}_R2.fastq.gz\n"
-			pe_params += "--out2 --other --paired_in"
-		} else {
-			mv_output = "mv -v work/out/other.fq.gz no_rrna/${sample.id}/${sample.id}_R1.fastq.gz"
+
+		def r1_files = fastqs.findAll( { it.name.endsWith("_R1.fastq.gz") } )
+		def r2_files = fastqs.findAll( { it.name.endsWith("_R2.fastq.gz") } )
+
+		if (r1_files.size() != 0) {
+			reads += "--reads ${r1_files[0]}"
+
+			if (r2_files.size() != 0) {
+				reads += " --reads ${r2_files[0]}"
+				mv_output += "mv -v work/out/other_fwd.fq.gz no_rrna/${sample.id}/${sample.id}_R1.fastq.gz\n"
+				mv_output += "mv -v work/out/other_rev.fq.gz no_rrna/${sample.id}/${sample.id}_R2.fastq.gz\n"
+				pe_params += "--out2 --other --paired_in"
+
+			} else {
+				mv_output += "mv -v work/out/other.fq.gz no_rrna/${sample.id}/${sample.id}_R1.fastq.gz\n"	
+			}
 		}
+
+	
+		
+		// if (sample.is_paired) {
+		// 	reads += " --reads ${sample.id}_R2.fastq.gz"
+		// 	// mv_output += "gzip -vc work/other_rev.fq > no_rrna/${sample.id}/${sample.id}_R2.fastq.gz\n"
+		// 	mv_output += "mv -v work/out/other_fwd.fq.gz no_rrna/${sample.id}/${sample.id}_R1.fastq.gz\n"
+		// 	mv_output += "mv -v work/out/other_rev.fq.gz no_rrna/${sample.id}/${sample.id}_R2.fastq.gz\n"
+		// 	pe_params += "--out2 --other --paired_in"
+		// } else {
+		// 	mv_output = "mv -v work/out/other.fq.gz no_rrna/${sample.id}/${sample.id}_R1.fastq.gz"
+		// }
 
 		"""
 		mkdir -p work/index/ no_rrna/${sample.id}/ rrna/${sample.id}/

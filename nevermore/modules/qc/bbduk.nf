@@ -24,20 +24,42 @@ process qc_bbduk {
     def trim_params = "${bb_params} ref=${adapters} minlen=${params.qc_minlen}"
 
     def orphan_filter = ""
-    
-    if (sample.is_paired) {
-        def orphans = "qc_reads/${sample.id}/${sample.id}.orphans_R1.fastq.gz"
-        read2 = "in2=${sample.id}_R2.fastq.${compression} out2=qc_reads/${sample.id}/${sample.id}_R2.fastq.gz outs=tmp_orphans.fq"
-        orphan_filter = "bbduk.sh -Xmx${maxmem}g t=${task.cpus} ${trim_params} in=tmp_orphans.fq out=${orphans}"
 
-        orphan_check = """
-        if [[ -z "\$(gzip -dc ${orphans} | head -n 1)" ]]; then
-			rm ${orphans}
-		fi
-        """
+    def r1_files = reads.findAll( { it.name.endsWith("_R1.fastq.${compression}") } )
+	def r2_files = reads.findAll( { it.name.endsWith("_R2.fastq.${compression}") } )
+
+    def read1 = ""
+    def orphans = ""
+    if (r1_files.size() != 0) {
+        read1 += "in1=${r1_files[0]} out1=qc_reads/${sample.id}/${sample.id}_R1.fastq.gz"
+        // read1 = "in1=${sample.id}_R1.fastq.${compression} out1=qc_reads/${sample.id}/${sample.id}_R1.fastq.gz"
+        if (r2_files.size() != 0) {
+            read2 += "in2=${r2_files[0]} out2=qc_reads/${sample.id}/${sample.id}_R2.fastq.gz outs=tmp_orphans.fq"
+            orphans += "qc_reads/${sample.id}/${sample.id}.orphans_R1.fastq.gz"
+            orphan_filter += "bbduk.sh -Xmx${maxmem}g t=${task.cpus} ${trim_params} in=tmp_orphans.fq out=${orphans}"
+            orphan_check = """
+            if [[ -z "\$(gzip -dc ${orphans} | head -n 1)" ]]; then
+                rm ${orphans}
+            fi
+            """
+        }
     }
+	
 
-    def read1 = "in1=${sample.id}_R1.fastq.${compression} out1=qc_reads/${sample.id}/${sample.id}_R1.fastq.gz"
+    
+    // if (sample.is_paired) {
+    //     def orphans = "qc_reads/${sample.id}/${sample.id}.orphans_R1.fastq.gz"
+    //     // read2 = "in2=${sample.id}_R2.fastq.${compression} out2=qc_reads/${sample.id}/${sample.id}_R2.fastq.gz outs=tmp_orphans.fq"
+    //     // orphan_filter = "bbduk.sh -Xmx${maxmem}g t=${task.cpus} ${trim_params} in=tmp_orphans.fq out=${orphans}"
+
+    //     orphan_check = """
+    //     if [[ -z "\$(gzip -dc ${orphans} | head -n 1)" ]]; then
+	// 		rm ${orphans}
+	// 	fi
+    //     """
+    // }
+
+    // def read1 = "in1=${sample.id}_R1.fastq.${compression} out1=qc_reads/${sample.id}/${sample.id}_R1.fastq.gz"
     
     def stats_out = "stats=stats/qc/bbduk/${sample.id}.bbduk_stats.txt"
 

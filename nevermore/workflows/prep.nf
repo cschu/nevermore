@@ -7,6 +7,8 @@ include { qc_bbduk_stepwise_amplicon } from "../modules/qc/bbduk_amplicon"
 include { qc_bbmerge } from "../modules/qc/bbmerge"
 include { fastqc } from "../modules/qc/fastqc"
 include { multiqc } from "../modules/qc/multiqc"
+include { calculate_library_size_cutoff; subsample_reads } from "../modules/qc/subsample"
+
 
 def merge_pairs = (params.merge_pairs || false)
 def keep_orphans = (params.keep_orphans || false)
@@ -38,15 +40,100 @@ workflow nevermore_simple_preprocessing {
 
 	main:
 		rawcounts_ch = Channel.empty()
-		if (params.run_qa) {
-			fastqc(fastq_ch, "raw")
+		if (params.run_qa || params.subsample) {
 
-			multiqc(
-				fastqc.out.stats.map { sample, report -> report }.collect(),
-				"${asset_dir}/multiqc.config",
-				"raw"
-			)
+			fastqc(fastq_ch, "raw")
 			rawcounts_ch = fastqc.out.counts
+
+			if (params.run_qa) {
+				multiqc(
+					fastqc.out.stats.map { sample, report -> report }.collect(),
+					"${asset_dir}/multiqc.config",
+					"raw"
+				)
+			}
+
+			if (params.subsample.subset) {
+				
+				fastq_ch
+					.branch {
+						subsample: params.subsample.subset == "all" || it[0].library_source == params.subsample.subset
+						no_subsample: true
+					}
+					.set { check_subsample_ch }
+				// subsample_ch = fastq_ch
+				// 	.filter { params.subsample.subset == "all" || it[0].library_source == params.subsample.subset }
+				// subsample_ch.dump(pretty: true, tag: "subsample_ch")
+
+				calculate_library_size_cutoff(
+					fastqc.out.counts
+						.filter { params.subsample.subset == "all" || it[0].library_source == params.subsample.subset }
+						.map { sample, counts -> return counts }
+						.collect(),
+					params.subsample.percentile
+				)
+				calculate_library_size_cutoff.out.library_sizes.view()
+
+				css_ch = check_subsample_ch.subsample
+					.map { sample, fastqs -> return tuple(sample.id, sample, fastqs) }
+					.join(
+						
+						calculate_library_size_cutoff.out.library_sizes
+							.splitCsv(header: true, sep: '\t', strip: true)
+							.map { row ->
+								return tuple(row.sample, row.do_subsample == "1", row.target_size)
+							},
+							by: 0,
+							remainder: true						
+					)
+
+				css_ch.dump(pretty: true, tag: "css_ch")
+
+
+				// for some reason, .branch does not work here :S
+				subsample_ch = css_ch
+					.filter { it[3] }
+					.map { sample_id, sample, fastqs, do_subsample, target_size ->
+						return tuple(sample, fastqs, target_size)
+					}
+				subsample_ch.dump(pretty: true, tag: "subsample_ch")
+
+				subsample_reads(subsample_ch)
+
+				do_not_subsample_ch = css_ch
+					.filter { !it[3] }
+					.map { sample_id, sample, fastqs, do_subsample, target_size ->
+						return tuple(sample, fastqs)
+					}
+					.concat(
+						check_subsample_ch.no_subsample
+					)
+				do_not_subsample_ch.dump(pretty: true, tag: "do_not_subsample_ch")
+
+				fastq_ch = do_not_subsample_ch
+					.concat(subsample_reads.out.subsampled_reads)
+
+				fastq_ch.dump(pretty: true, tag: "post_subsample_fastq_ch")
+
+				// css_ch
+				// 	.branch {
+				// 		subsample: it[3] == true
+				// 		no_subsample: true
+				// 	}
+				// 	.set { subsample_ch }
+				
+				// subsample_ch.subsample.dump(pretty: true, tag: "subsample_ch")
+				// subsample_ch.no_subsample.dump(pretty: true, tag: "no_subsample_ch")	
+
+				
+				
+
+
+			}
+
+
+
+
 		}
 
 		processed_reads_ch = Channel.empty()
