@@ -3,11 +3,18 @@ nextflow.enable.dsl=2
 include { classify_sample; classify_sample_with_library_info } from "../modules/functions"
 
 
+def bam_suffix_pattern = null
+def bam_input_pattern = ""
+
 if (!params.bam_input_pattern) {
-	params.bam_input_pattern = "**.bam"
+	bam_input_pattern = "**.bam"	
+} else {
+	bam_input_pattern = params.bam_input_pattern
 }
 
-def bam_suffix_pattern = params.bam_input_pattern.replaceAll(/\*/, "")
+bam_suffix_pattern = bam_input_pattern.replaceAll(/\*/, "")
+
+ 
 
 def input_dir = (params.input_dir) ? params.input_dir : params.remote_input_dir
 

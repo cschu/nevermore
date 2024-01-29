@@ -40,7 +40,7 @@ workflow nevermore_simple_preprocessing {
 
 	main:
 		rawcounts_ch = Channel.empty()
-		if (params.run_qa || params.subsample) {
+		if (params.run_qa || params.subsample.subset) {
 
 			fastqc(fastq_ch, "raw")
 			rawcounts_ch = fastqc.out.counts
