@@ -31,9 +31,6 @@ workflow nevermore_main {
 				preprocessed_ch = preprocessed_ch.concat(nevermore_simple_preprocessing.out.orphan_reads_out)
 			}
 
-			if (!params.test_subsampling) {
-
-
 			if (params.run_sortmerna) {
 
 				preprocessed_ch
@@ -67,7 +64,7 @@ workflow nevermore_main {
 	
 			}
 	
-			}
+
 		} else {
 	
 			preprocessed_ch = fastq_ch
