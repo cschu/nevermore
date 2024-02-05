@@ -2,7 +2,7 @@ process run_samestr_convert {
     
     input:
 		path(mp_sam)
-        path(mp_profile)
+        	path(mp_profile)
 		path(marker_db)
 
     output:
@@ -20,13 +20,13 @@ process run_samestr_convert {
         --nprocs ${task.cpus} \
         --tax-profiles-extension .txt
     """
-        // --mp-profiles-extension .txt \
 }
 
 process run_samestr_merge {
     
     input:
         tuple val(species), path(sstr_npy)
+	path(marker_db)
 
     output:
         tuple \
@@ -41,7 +41,8 @@ process run_samestr_merge {
     merge \
         --input-files ${sstr_npy} \
         --output-dir sstr_merge/ \
-        --species ${species} \
+	--marker-dir ${marker_db} \
+        --clade ${species} \
         --nprocs ${task.cpus}
     """
 }
@@ -50,7 +51,7 @@ process run_samestr_filter {
     
     input:
         tuple val(species), path(sstr_npy), path(sstr_names)
-		path(marker_db)
+	path(marker_db)
 
     output:
         tuple \
@@ -76,7 +77,7 @@ process run_samestr_filter {
         --samples-min-n-hcov 5000 \
         --sample-var-min-n-vcov 2 \
         --sample-var-min-f-vcov 0.025 \
-        --species-min-samples 1 \
+        --clade-min-samples 1 \
         --nprocs ${task.cpus}
     """
 }
@@ -85,6 +86,7 @@ process run_samestr_stats {
     
     input:
         tuple val(species), path(sstr_npy), path(sstr_names)
+	path(marker_db)
 
     output:
         path "sstr_stats/${species}.aln_stats.txt", emit: sstr_stats
@@ -95,6 +97,7 @@ process run_samestr_stats {
     stats \
     --input-files ${sstr_npy} \
     --input-names ${sstr_names} \
+    --marker-dir ${marker_db} \
     --nprocs ${task.cpus} \
     --output-dir sstr_stats/
     """
@@ -104,6 +107,7 @@ process run_samestr_compare {
     
     input:
         tuple val(species), path(sstr_npy), path(sstr_names)
+	path(marker_db)
 
     output:
         tuple \
@@ -118,6 +122,7 @@ process run_samestr_compare {
     compare \
         --input-files ${sstr_npy} \
         --input-names ${sstr_names} \
+        --marker-dir ${marker_db} \
         --output-dir sstr_compare/ \
         --nprocs ${task.cpus}
     """
@@ -128,12 +133,11 @@ process run_samestr_summarize {
     input:
         path(sstr_data)
         path(mp_profiles)
+	path(marker_db)
 
     output:
         tuple \
-            path("sstr_summarize/mp_counts.tsv"), \
-            path("sstr_summarize/mp_species.tsv"), \
-            path("sstr_summarize/mp_taxonomy.tsv"), \
+            path("sstr_summarize/taxon_counts.tsv"), \
             path("sstr_summarize/sstr_cooccurrences.tsv"), \
             path("sstr_summarize/sstr_strain_events.tsv"), \
         emit: sstr_summarize
@@ -141,13 +145,15 @@ process run_samestr_summarize {
     script:
     """
     mkdir profiles/
+    # TODO: this will only work with metaphlan, not motus
     find . -maxdepth 1 -name '*.mp4.txt' -exec mv -v {} profiles/ \\;
 
     samestr --verbosity DEBUG \
     summarize \
         --input-dir ./ \
-        --mp-profiles-dir ./profiles/ \
-        --mp-profiles-extension .txt \
+        --marker-dir ${marker_db} \
+        --tax-profiles-dir ./profiles/ \
+        --tax-profiles-extension .txt \
         --output-dir sstr_summarize/
     """
 }
