@@ -6,7 +6,7 @@ process run_metaphlan4 {
 
 	output:
 	tuple val(sample), path("${sample.id}.mp4.txt"), emit: mp4_table
-	tuple val(sample), path("${sample.id}.mp4.sam.bz2"), emit: mp4_sam
+	tuple val(sample), path("${sample.id}.mp4.sam.bz2"), emit: mp4_sam, optional: (params.run_samestr || params.samestr_compatible_output)
 	// tuple val(sample), path("${sample.id}.bowtie2.bz2"), emit: mp4_bt2
 	
 	script:
