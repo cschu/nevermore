@@ -6,6 +6,7 @@ include { nevermore_main } from "./nevermore/workflows/nevermore"
 include { gffquant_flow } from "./nevermore/workflows/gffquant"
 include { fastq_input } from "./nevermore/workflows/input"
 
+
 if (params.input_dir && params.remote_input_dir) {
 	log.info """
 		Cannot process both --input_dir and --remote_input_dir. Please check input parameters.
@@ -19,9 +20,11 @@ if (params.input_dir && params.remote_input_dir) {
 }
 
 def input_dir = (params.input_dir) ? params.input_dir : params.remote_input_dir
+def do_alignment = params.run_gffquant || !params.skip_alignment
+def do_stream = params.gq_stream
+
 
 params.ignore_dirs = ""
-
 
 
 workflow {
@@ -36,10 +39,27 @@ workflow {
 	
 	nevermore_main(fastq_ch)
 
+	align_ch = Channel.empty()
+	counts_ch = nevermore_main.out.readcounts
+
+	if (!do_stream && do_alignment) {
+		nevermore_align(nevermore_main.out.reads)
+		align_ch = nevermore_align.out.alignments
+		counts_ch = counts_ch.concat(
+			nevermore_align.out.aln_counts
+				.map { sample, file -> return file }
+				.collect()
+		)
+	}
+
+	if (do_preprocessing && params.run_qa) {
+		collate_stats(counts_ch.collect())		
+	}
+
 	if (params.run_gffquant) {
 
 		if (params.gq_stream) {
-			gq_input_ch = nevermore_main.out.fastqs
+			gq_input_ch = nevermore_main.out.reads
 				.map { sample, fastqs ->
 				sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
 				return tuple(sample_id, [fastqs].flatten())
@@ -50,7 +70,7 @@ workflow {
 
 		} else {
 
-			gq_input_ch = nevermore_main.out.alignments
+			gq_input_ch = align_ch()
 
 		}
 
