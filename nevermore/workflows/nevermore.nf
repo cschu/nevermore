@@ -7,7 +7,7 @@ include { prepare_fastqs } from "../modules/converters/prepare_fastqs"
 include { fastqc } from "../modules/qc/fastqc"
 include { multiqc } from "../modules/qc/multiqc"
 include { collate_stats } from "../modules/collate"
-include { nevermore_align; nevermore_prep_align } from "./align"
+include { nevermore_align } from "./align"
 include { nevermore_pack_reads } from "./pack"
 include { nevermore_qa } from "./qa"
 
