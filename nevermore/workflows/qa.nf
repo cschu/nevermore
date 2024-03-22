@@ -11,7 +11,7 @@ workflow nevermore_qa {
 		counts_ch
 
 	main:
-		fastqc(fastqc, "qc")
+		fastqc(fastq_ch, "qc")
 
 		multiqc(
 			fastqc.out.stats
