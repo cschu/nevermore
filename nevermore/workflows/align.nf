@@ -184,24 +184,24 @@ def do_preprocessing = (!params.skip_preprocessing || params.run_preprocessing)
 // }
 
 
-align_ch = Channel.empty()
-		if (!do_stream && do_alignment) {
-			nevermore_align(nevermore_prep_align.out.fastqs)
-			align_ch = nevermore_align.out.alignments
+// align_ch = Channel.empty()
+// 		if (!do_stream && do_alignment) {
+// 			nevermore_align(nevermore_prep_align.out.fastqs)
+// 			align_ch = nevermore_align.out.alignments
 	
-			if (do_preprocessing) {		
-				collate_ch = collate_ch	
-					.concat(
-						nevermore_align.out.aln_counts
-							.map { sample, file -> return file }
-							.collect()
-					)		
-			}
-		}
+// 			if (do_preprocessing) {		
+// 				collate_ch = collate_ch	
+// 					.concat(
+// 						nevermore_align.out.aln_counts
+// 							.map { sample, file -> return file }
+// 							.collect()
+// 					)		
+// 			}
+// 		}
 
-		if (do_preprocessing && params.run_qa) {
-			collate_stats(collate_ch.collect())
-		}
+// 		if (do_preprocessing && params.run_qa) {
+// 			collate_stats(collate_ch.collect())
+// 		}
 
 
 workflow nevermore_align {
