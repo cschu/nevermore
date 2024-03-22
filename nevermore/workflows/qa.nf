@@ -1,6 +1,8 @@
 include { fastqc } from "../modules/qc/fastqc"
 include { multiqc } from "../modules/qc/multiqc"
 
+def asset_dir = "${projectDir}/nevermore/assets"
+
 
 workflow nevermore_qa {
 
