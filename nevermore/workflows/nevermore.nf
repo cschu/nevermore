@@ -10,6 +10,7 @@ include { collate_stats } from "../modules/collate"
 include { nevermore_align } from "./align"
 include { nevermore_pack_reads } from "./pack"
 include { nevermore_qa } from "./qa"
+include { nevermore_decon } from "./decon"
 
 
 def do_preprocessing = (!params.skip_preprocessing || params.run_preprocessing)
