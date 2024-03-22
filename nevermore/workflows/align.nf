@@ -9,7 +9,8 @@ include { merge_and_sort } from "../modules/align/helpers"
 // include { merge_single_fastqs } from "../modules/converters/merge_fastqs"
 
 def asset_dir = "${projectDir}/nevermore/assets"
-
+def do_alignment = params.run_gffquant || !params.skip_alignment
+def do_stream = params.gq_stream
 
 // workflow nevermore_prep_align {
 
