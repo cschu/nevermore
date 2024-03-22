@@ -22,6 +22,7 @@ if (params.input_dir && params.remote_input_dir) {
 def input_dir = (params.input_dir) ? params.input_dir : params.remote_input_dir
 def do_alignment = params.run_gffquant || !params.skip_alignment
 def do_stream = params.gq_stream
+def do_preprocessing = (!params.skip_preprocessing || params.run_preprocessing)
 
 
 params.ignore_dirs = ""
