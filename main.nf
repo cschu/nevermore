@@ -5,7 +5,7 @@ nextflow.enable.dsl=2
 include { nevermore_main } from "./nevermore/workflows/nevermore"
 include { gffquant_flow } from "./nevermore/workflows/gffquant"
 include { fastq_input } from "./nevermore/workflows/input"
-include { collate_stats } from "../modules/collate"
+include { collate_stats } from "./nevermore/modules/collate"
 
 
 if (params.input_dir && params.remote_input_dir) {
