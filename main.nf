@@ -45,7 +45,7 @@ workflow {
 	counts_ch = nevermore_main.out.readcounts
 
 	if (!do_stream && do_alignment) {
-		nevermore_align(nevermore_main.out.reads)
+		nevermore_align(nevermore_main.out.fastqs)
 		align_ch = nevermore_align.out.alignments
 		counts_ch = counts_ch.concat(
 			nevermore_align.out.aln_counts
@@ -61,7 +61,7 @@ workflow {
 	if (params.run_gffquant) {
 
 		if (params.gq_stream) {
-			gq_input_ch = nevermore_main.out.reads
+			gq_input_ch = nevermore_main.out.fastqs
 				.map { sample, fastqs ->
 				sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
 				return tuple(sample_id, [fastqs].flatten())

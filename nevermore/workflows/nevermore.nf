@@ -59,7 +59,7 @@ workflow nevermore_main {
 		}
 
 	emit:
-		reads = nevermore_pack_reads.out.fastqs
+		fastqs = nevermore_pack_reads.out.fastqs
 		readcounts = collate_ch
 
 }

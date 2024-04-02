@@ -1,6 +1,4 @@
 process flagstats {
-    // publishDir params.output_dir, mode: params.publish_mode
-
     input:
     tuple val(sample), path(bam)
 

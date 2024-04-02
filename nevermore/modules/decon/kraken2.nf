@@ -1,3 +1,6 @@
+params.kraken2_min_hit_groups = 10
+params.fix_read_ids = true
+
 process remove_host_kraken2 {
 	label 'kraken2'
 
