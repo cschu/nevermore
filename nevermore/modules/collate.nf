@@ -1,6 +1,4 @@
 process collate_stats {
-    // publishDir params.output_dir, mode: params.publish_mode
-
     input:
     path(stats_files)
 
