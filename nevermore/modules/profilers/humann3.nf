@@ -1,3 +1,5 @@
+// TODO: get default containers
+
 process reduce_metaphlan_profiles {
 
 	input:

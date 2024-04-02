@@ -1,5 +1,6 @@
 process fastqc {
-    
+    container "docker://quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0"
+
     input:
     tuple val(sample), path(reads)
     val(stage)

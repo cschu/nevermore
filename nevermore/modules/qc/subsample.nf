@@ -42,6 +42,8 @@ process calculate_library_size_cutoff {
 }
 
 process subsample_reads {
+	container "docker://quay.io/biocontainers/seqtk:1.4--he4a0461_2"
+
 	input:
 	tuple val(sample), path(fastqs), val(target_size)
 

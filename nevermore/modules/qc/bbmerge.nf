@@ -1,5 +1,7 @@
-
 process qc_bbmerge {
+    container "docker://quay.io/biocontainers/bbmap:39.06--h92535d8_0"
+    label "bbduk"
+
     input:
     tuple val(sample), path(reads)
 

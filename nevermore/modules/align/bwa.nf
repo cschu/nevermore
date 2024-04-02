@@ -1,4 +1,5 @@
 process bwa_mem_align {
+    container "docker://registry.git.embl.de/schudoma/align-docker:latest"
     label 'align'
 
     input:
@@ -40,6 +41,9 @@ process bwa_mem_align {
 
     def read_group_id = (sample.library == "paired") ? ((sample.is_paired) ? 2 : 2) : 1
     def read_group = "'@RG\\tID:${read_group_id}\\tSM:${sample.id}'"
+
+    pre_sort_cmd_1 = ""
+    pre_sort_cmd_2 = ""
 
     """
     set -e -o pipefail

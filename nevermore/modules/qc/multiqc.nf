@@ -1,4 +1,6 @@
 process multiqc {
+    container "docker://quay.io/biocontainers/multiqc:1.21--pyhdfd78af_0"
+
     input:
     path(reports)
 	path(multiqc_config)
