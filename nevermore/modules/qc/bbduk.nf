@@ -1,3 +1,6 @@
+params.qc_params_shotgun = "qtrim=rl trimq=3 maq=25 ktrim=r k=23 mink=11 hdist=1 ftm=5 entropy=0.5 entropywindow=50 entropyk=5 tpe tbo"
+params.qc_minlen = 45
+
 process qc_bbduk {
     container "docker://quay.io/biocontainers/bbmap:39.06--h92535d8_0"
 	label 'bbduk'

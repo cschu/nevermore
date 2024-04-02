@@ -1,5 +1,5 @@
 process flagstats {
-    container "docker://quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
+    container "docker://registry.git.embl.de/schudoma/align-docker:latest"
 
     input:
     tuple val(sample), path(bam)
