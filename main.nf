@@ -72,7 +72,7 @@ workflow {
 
 		} else {
 
-			gq_input_ch = align_ch()
+			gq_input_ch = align_ch
 
 		}
 
