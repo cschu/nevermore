@@ -9,7 +9,8 @@ process stream_gffquant {
 		path(gq_db)
 		path(reference)
 	output:
-		tuple val(sample), path("profiles/${sample}/*.txt.gz"), emit: results
+		tuple val(sample), path("profiles/${sample}/*.txt.gz"), emit: results, optional: !params.gq_panda
+		tuple val(sample), path("profiles/${sample}/*.pd.txt"), emit: profiles, optional: params.gq_panda
 		tuple val(sample), path("logs/${sample}.log")
 
 	script:
@@ -134,10 +135,28 @@ process run_gffquant {
 
 params.gq_collate_columns = "uniq_scaled,combined_scaled"
 
+// process collate_feature_counts {
+
+// 	input:
+// 	tuple val(sample), path(count_tables), val(column)
+
+// 	output:
+// 	path("collated/*.txt.gz"), emit: collated, optional: true
+
+// 	script:
+// 	"""
+// 	mkdir -p collated/
+
+// 	collate_counts . -o collated/collated -c ${column}
+// 	"""
+// }
+
 process collate_feature_counts {
+	label "collate_profiles"
 
 	input:
 	tuple val(sample), path(count_tables), val(column)
+	val(suffix)
 
 	output:
 	path("collated/*.txt.gz"), emit: collated, optional: true
@@ -146,6 +165,6 @@ process collate_feature_counts {
 	"""
 	mkdir -p collated/
 
-	collate_counts . -o collated/collated -c ${column}
+	collate_counts . -o collated/collated -c ${column} --suffix ${suffix}
 	"""
 }
