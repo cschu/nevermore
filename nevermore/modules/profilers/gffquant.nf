@@ -9,8 +9,8 @@ process stream_gffquant {
 		path(gq_db)
 		path(reference)
 	output:
-		tuple val(sample), path("profiles/${sample}/*.txt.gz"), emit: results, optional: params.gq_panda == false
-		tuple val(sample), path("profiles/${sample}/*.pd.txt"), emit: profiles, optional: params.gq_panda == true
+		tuple val(sample), path("profiles/${sample}/*.txt.gz"), emit: results, optional: (!params.gq_panda) ? true : false
+		tuple val(sample), path("profiles/${sample}/*.pd.txt"), emit: profiles, optional: (params.gq_panda) ? true : false
 		tuple val(sample), path("logs/${sample}.log")
 
 	script:
