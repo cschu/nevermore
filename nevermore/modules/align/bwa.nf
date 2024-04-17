@@ -50,7 +50,7 @@ process bwa_mem_align {
     mkdir -p tmp/
     ${pre_sort_cmd_1}
     ${pre_sort_cmd_2}
-    bwa mem -R ${read_group} -a -t ${align_cpus} ${blocksize} \$(readlink ${reference}) ${sample.id}_R1.sorted.fastq.gz ${reads2} | samtools view -F 4 -buSh - | ${sort_cmd}
+    bwa mem -R ${read_group} -a -t ${align_cpus} ${blocksize} \$(readlink ${reference}) ${r1_input} ${r2_input} | samtools view -F 4 -buSh - | ${sort_cmd}
     rm -rvf tmp/ *.sorted.fastq.gz
     """
     // sortbyname.sh -Xmx${maxmem}g in=${sample.id}_R1.fastq.gz out=${sample.id}_R1.sorted.fastq.gz interleaved=f
