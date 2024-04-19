@@ -1,4 +1,4 @@
-params.gq_aligner = "bwa_mem"
+params.gq_aligner = "bwa"
 
 process stream_gffquant {
 	label "gffquant"
