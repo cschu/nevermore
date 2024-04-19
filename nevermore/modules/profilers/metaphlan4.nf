@@ -28,7 +28,7 @@ process run_metaphlan4 {
 	input_files += fastqs.findAll( { it.name.endsWith("_R1.fastq.gz") && !it.name.matches("(.*)(singles|orphans|chimeras)(.*)") } )
 	input_files += fastqs.findAll( { it.name.endsWith("_R2.fastq.gz") } )
 	input_files += fastqs.findAll( { it.name.matches("(.*)(singles|orphans|chimeras)(.*)") } )
-	def mp4_input = input_files.join(',')
+	mp4_input = input_files.join(',')
 
 
 
