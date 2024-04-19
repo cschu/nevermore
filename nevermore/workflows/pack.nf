@@ -42,7 +42,7 @@ workflow nevermore_pack_reads {
 			}
 		.set { single_reads_ch }
 
-		def se_group_size = 3 - (params.drop_chimeras ? 1 : 0) - (params.drop_orphans ? 1 : 0)
+		def se_group_size = 2 - (params.drop_orphans ? 1 : 0)
 
 		single_reads_ch.paired_end
 			.groupTuple(sort: true, size: se_group_size, remainder: true)
