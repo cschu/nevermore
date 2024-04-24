@@ -40,7 +40,10 @@ workflow gffquant_flow {
 				Channel.from(params.gq_collate_columns.split(","))
 			)
 
-		collate_feature_counts(feature_count_ch, (params.gq_panda) ? ".pd.txt" : ".txt.gz")
+		collate_feature_counts(
+			feature_count_ch,
+			(params.future_features ? ((params.gq_panda) ? ".pd.txt" : ".txt.gz")) : ""
+		)
 
 	// 	feature_count_ch = feature_count_ch
 	// 		.map { sample, files -> return files }

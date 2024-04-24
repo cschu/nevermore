@@ -162,9 +162,10 @@ process collate_feature_counts {
 	path("collated/*.txt.gz"), emit: collated, optional: true
 
 	script:
+	def suffix_param = (suffix != "") ? "--suffix ${suffix}" : ""
 	"""
 	mkdir -p collated/
 
-	collate_counts . -o collated/collated -c ${column} --suffix ${suffix}
+	collate_counts . -o collated/collated -c ${column} ${suffix_param}
 	"""
 }
