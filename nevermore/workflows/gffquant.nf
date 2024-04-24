@@ -42,7 +42,7 @@ workflow gffquant_flow {
 
 		collate_feature_counts(
 			feature_count_ch,
-			(params.future_features ? ((params.gq_panda) ? ".pd.txt" : ".txt.gz")) : ""
+			(params.future_features ? ((params.gq_panda) ? ".pd.txt" : ".txt.gz") : "")
 		)
 
 	// 	feature_count_ch = feature_count_ch
