@@ -12,6 +12,7 @@ process stream_gffquant {
 		tuple val(sample), path("profiles/${sample}/*.{txt.gz,pd.txt}"), emit: results //, optional: (!params.gq_panda) ? true : false
 		tuple val(sample), path("profiles/${sample}/*.{txt.gz,pd.txt}"), emit: profiles //, optional: (params.gq_panda) ? true : false
 		tuple val(sample), path("logs/${sample}.log")
+		tuple val(sample), path("alignments/${sample}*.sam"), emit: alignments, optional: true
 
 	script:
 			def gq_output = "-o profiles/${sample}/${sample}"
