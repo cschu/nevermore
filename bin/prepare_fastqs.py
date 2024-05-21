@@ -166,9 +166,14 @@ def process_sample(
 
 		print("PRE", prefixes, file=sys.stderr)
 
+		def rx_filter(s, x=1):
+			return re.search(r"[._R]" + str(x) + r"$", s) and not re.search(r"(orphan|single)s?", s)
+
 		# partition fastqs into R1, R2, and 'other' sets
-		r1 = [(p, f) for p, f in zip(prefixes, fastqs) if re.search(r"[._R]1$", p)]
-		r2 = [(p, f) for p, f in zip(prefixes, fastqs) if re.search(r"[._R]2$", p)]
+		# r1 = [(p, f) for p, f in zip(prefixes, fastqs) if re.search(r"[._R]1$", p)]
+		r1 = [(p, f) for p, f in zip(prefixes, fastqs) if rx_filter(p, x=1)]
+		# r2 = [(p, f) for p, f in zip(prefixes, fastqs) if re.search(r"[._R]2$", p)]
+		r2 = [(p, f) for p, f in zip(prefixes, fastqs) if rx_filter(p, x=2)]
 		others = sorted(list(set(fastqs).difference({f for _, f in r1}).difference({f for _, f in r2})))
 
 		# check if R1/R2 sets have equal sizes or are empty
@@ -180,7 +185,7 @@ def process_sample(
 		if len(r1) == len(r2) and r1:
 			check_pairwise(r1, r2)
 
-		# sort R1/R2 for concatenation, get rid off prefixes
+		# sort R1/R2 for concatenation, get rid of prefixes
 		r1 = sorted(f for _, f in r1)
 		r2 = sorted(f for _, f in r2)
 
