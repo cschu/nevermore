@@ -1,5 +1,5 @@
 process bam2fq {
-    container "docker://quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
+    container "quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
     input:
     tuple val(sample), path(bam)
 

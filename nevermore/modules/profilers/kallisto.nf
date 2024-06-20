@@ -1,5 +1,5 @@
 process kallisto_index {
-	container "docker://quay.io/biocontainers/kallisto:0.50.1--hc877fd6_1"
+	container "quay.io/biocontainers/kallisto:0.50.1--hc877fd6_1"
 
 	input:
 	tuple val(sample), path(genes)
@@ -19,7 +19,7 @@ process kallisto_index {
 params.profilers.kallisto.bootstrap = 100
 
 process kallisto_quant {
-	container "docker://quay.io/biocontainers/kallisto:0.50.1--hc877fd6_1"
+	container "quay.io/biocontainers/kallisto:0.50.1--hc877fd6_1"
 
 	input:
 	tuple val(sample), path(fastqs), path(kallisto_index)

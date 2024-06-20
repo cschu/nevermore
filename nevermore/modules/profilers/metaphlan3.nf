@@ -1,5 +1,5 @@
 process run_metaphlan3 {
-	container "docker://quay.io/biocontainers/metaphlan:3.1.0--pyhb7b1952_0"
+	container "quay.io/biocontainers/metaphlan:3.1.0--pyhb7b1952_0"
 	
 	input:
 	tuple val(sample), path(fastqs)
@@ -48,7 +48,7 @@ process run_metaphlan3 {
 }
 
 process combine_metaphlan3 {
-	container "docker://quay.io/biocontainers/metaphlan:3.1.0--pyhb7b1952_0"
+	container "quay.io/biocontainers/metaphlan:3.1.0--pyhb7b1952_0"
 
 	input:
 	tuple val(sample), path(bt2)
@@ -69,7 +69,7 @@ process combine_metaphlan3 {
 
 
 process collate_metaphlan3_tables {
-	container "docker://quay.io/biocontainers/metaphlan:3.1.0--pyhb7b1952_0"
+	container "quay.io/biocontainers/metaphlan:3.1.0--pyhb7b1952_0"
 
 	input:
 	path(tables)

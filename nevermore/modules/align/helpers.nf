@@ -1,5 +1,5 @@
 process merge_and_sort {
-    container "docker://quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
+    container "quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
     label 'samtools'
 
     input:
@@ -30,7 +30,7 @@ process merge_and_sort {
 
 
 process db_filter {
-    container "docker://quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
+    container "quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
     label 'samtools'
 
     input:
@@ -51,7 +51,7 @@ process db_filter {
 
 
 process readcount {
-    container "docker://quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
+    container "quay.io/biocontainers/samtools:1.19.2--h50ea8bc_1"
     label 'samtools'
 
     input:

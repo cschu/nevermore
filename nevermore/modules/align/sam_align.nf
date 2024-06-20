@@ -1,5 +1,5 @@
 process minimap2_align {
-	container "docker://quay.io/biocontainers/minimap2:2.28--he4a0461_0"
+	container "quay.io/biocontainers/minimap2:2.28--he4a0461_0"
 	label 'align'
 
 	input:
@@ -21,7 +21,7 @@ process minimap2_align {
 
 
 process bwa_mem_align {
-	container "docker://quay.io/biocontainers/bwa:0.7.3a--he4a0461_9"
+	container "quay.io/biocontainers/bwa:0.7.3a--he4a0461_9"
 	label 'align'
 
 	input:

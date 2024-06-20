@@ -23,7 +23,7 @@ workflow nevermore_qa {
 		)
 
 		readcounts_ch = counts_ch
-			.concat(fastqc.out.counts)
+			.mix(fastqc.out.counts)
 			.map { sample, file -> return file }	
 
 	emit:

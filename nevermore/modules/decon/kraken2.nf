@@ -2,7 +2,7 @@ params.kraken2_min_hit_groups = 10
 params.fix_read_ids = true
 
 process remove_host_kraken2 {
-	container "docker://registry.git.embl.de/schudoma/kraken2-docker:latest"
+	container "registry.git.embl.de/schudoma/kraken2-docker:latest"
 	label 'kraken2'
 
     input:
@@ -31,7 +31,7 @@ process remove_host_kraken2 {
 
 
 process remove_host_kraken2_individual {
-	container "docker://registry.git.embl.de/schudoma/kraken2-docker:latest"
+	container "registry.git.embl.de/schudoma/kraken2-docker:latest"
 	label 'kraken2'
 
 	input:

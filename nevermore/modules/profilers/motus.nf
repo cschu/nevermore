@@ -4,7 +4,7 @@ params.motus_n_marker_genes = 3
 
 
 process motus {
-    container "docker://quay.io/biocontainers/motus:3.1.0--pyhdfd78af_0"
+    container "quay.io/biocontainers/motus:3.1.0--pyhdfd78af_0"
 
     input:
     tuple val(sample), path(reads)

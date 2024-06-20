@@ -104,13 +104,13 @@ workflow nevermore_simple_preprocessing {
 					.map { sample_id, sample, fastqs, do_subsample, target_size ->
 						return tuple(sample, fastqs)
 					}
-					.concat(
+					.mix(
 						check_subsample_ch.no_subsample
 					)
 				do_not_subsample_ch.dump(pretty: true, tag: "do_not_subsample_ch")
 
 				fastq_ch = do_not_subsample_ch
-					.concat(subsample_reads.out.subsampled_reads)
+					.mix(subsample_reads.out.subsampled_reads)
 
 				fastq_ch.dump(pretty: true, tag: "post_subsample_fastq_ch")
 			}
@@ -123,13 +123,13 @@ workflow nevermore_simple_preprocessing {
 		if (params.amplicon_seq) {
 
 			qc_bbduk_stepwise_amplicon(fastq_ch, "${asset_dir}/adapters.fa")
-			processed_reads_ch = processed_reads_ch.concat(qc_bbduk_stepwise_amplicon.out.reads)
-			orphans_ch = orphans_ch.concat(qc_bbduk_stepwise_amplicon.out.orphans)
+			processed_reads_ch = processed_reads_ch.mix(qc_bbduk_stepwise_amplicon.out.reads)
+			orphans_ch = orphans_ch.mix(qc_bbduk_stepwise_amplicon.out.orphans)
 
 		} else {
 
 			qc_bbduk(fastq_ch, "${asset_dir}/adapters.fa")
-			processed_reads_ch = processed_reads_ch.concat(qc_bbduk.out.reads)
+			processed_reads_ch = processed_reads_ch.mix(qc_bbduk.out.reads)
 			orphans_ch = qc_bbduk.out.orphans
 				.map { sample, file -> 
 					def meta = sample.clone()

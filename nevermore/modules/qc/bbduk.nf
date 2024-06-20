@@ -2,8 +2,9 @@ params.qc_params_shotgun = "qtrim=rl trimq=3 maq=25 ktrim=r k=23 mink=11 hdist=1
 params.qc_minlen = 45
 
 process qc_bbduk {
-    container "docker://quay.io/biocontainers/bbmap:39.06--h92535d8_0"
+    container "quay.io/biocontainers/bbmap:39.06--h92535d8_0"
 	label 'bbduk'
+    tag "${sample.id}"
 
 
     input:

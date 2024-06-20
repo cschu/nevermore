@@ -30,7 +30,7 @@ workflow nevermore_main {
 	
 			preprocessed_ch = nevermore_simple_preprocessing.out.main_reads_out
 			if (!params.drop_orphans) {
-				preprocessed_ch = preprocessed_ch.concat(nevermore_simple_preprocessing.out.orphan_reads_out)
+				preprocessed_ch = preprocessed_ch.mix(nevermore_simple_preprocessing.out.orphan_reads_out)
 			}
 
 			nevermore_decon(preprocessed_ch)
