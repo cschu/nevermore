@@ -17,7 +17,7 @@ def asset_dir = "${projectDir}/nevermore/assets"
 
 params.subsample = [:]
 params.subsample.random_seed = 313
-
+params.subsample.subset = "metaT"
 
 process concat_singles {
     input:
@@ -42,7 +42,7 @@ workflow nevermore_simple_preprocessing {
 
 	main:
 		rawcounts_ch = Channel.empty()
-		if (params.run_qa || params.subsample.subset) {
+		if (params.run_qa || (params.subsample.subset && params.subsample_percentile < 100.0 && params.subsample_percentile > 0.0)) {
 
 			fastqc(fastq_ch, "raw")
 			rawcounts_ch = fastqc.out.counts
@@ -55,7 +55,9 @@ workflow nevermore_simple_preprocessing {
 				)
 			}
 
-			if (params.subsample.subset) {
+			if (params.subsample.subset && params.subsample_percentile < 100.0 && params.subsample_percentile > 0.0) {
+
+				fastq_ch.dump(pretty: true, tag: "fastq_ch")
 				
 				fastq_ch
 					.branch {
@@ -64,12 +66,18 @@ workflow nevermore_simple_preprocessing {
 					}
 					.set { check_subsample_ch }
 
+				check_subsample_ch.subsample.dump(pretty: true, tag: "check_subsample_ch")
+				check_subsample_ch.no_subsample.dump(pretty: true, tag: "check_no_subsample_ch")
+				// subsample_ch = fastq_ch
+				// 	.filter { params.subsample.subset == "all" || it[0].library_source == params.subsample.subset }
+				// subsample_ch.dump(pretty: true, tag: "subsample_ch")
+				
 				calculate_library_size_cutoff(
 					fastqc.out.counts
 						.filter { params.subsample.subset == "all" || it[0].library_source == params.subsample.subset }
 						.map { sample, counts -> return counts }
 						.collect(),
-					params.subsample.percentile
+					params.subsample_percentile, 
 				)
 				calculate_library_size_cutoff.out.library_sizes.view()
 
