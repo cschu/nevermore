@@ -12,7 +12,7 @@ process stream_gffquant {
 		tuple val(sample), path("profiles/${sample}/*.{txt.gz,pd.txt}"), emit: results //, optional: (!params.gq_panda) ? true : false
 		tuple val(sample), path("profiles/${sample}/*.{txt.gz,pd.txt}"), emit: profiles //, optional: (params.gq_panda) ? true : false
 		tuple val(sample), path("logs/${sample}.log")
-		tuple val(sample), path("alignments/${sample}*.sam"), emit: alignments, optional: true
+		tuple val(sample), path("alignments/${sample}/${sample}*.sam"), emit: alignments, optional: true
 
 	script:
 			def gq_output = "-o profiles/${sample}/${sample}"
@@ -22,7 +22,7 @@ process stream_gffquant {
 			gq_params += (params.gq_min_seqlen) ? (" --min_seqlen " + params.gq_min_seqlen) : ""
 			gq_params += (params.gq_min_identity) ? (" --min_identity " + params.gq_min_identity) : ""
 			gq_params += (params.gq_restrict_metrics) ? " --restrict_metrics ${params.gq_restrict_metrics}" : ""
-			gq_params += (params.gq_keep_alignments) ? " --keep_alignment_file ${sample}.sam" : ""
+			gq_params += (params.gq_keep_alignments) ? " --keep_alignment_file alignments/${sample}.sam" : ""
 			gq_params += (params.gq_unmarked_orphans) ? " --unmarked_orphans" : ""
 
 			gq_params += " -t ${task.cpus}"
@@ -57,10 +57,12 @@ process stream_gffquant {
 			}
 	
 			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db GQ_DATABASE --reference \$(readlink ${reference}) --aligner ${params.gq_aligner} ${input_files}"
+			def mkdir_alignments = (params.keep_alignment_file != null && params.keep_alignment_file != false) ? "mkdir -p alignments/${sample}/" : ""
 
 			"""
 			set -e -o pipefail
 			mkdir -p logs/ tmp/ profiles/
+			${mkdir_alignments}
 			echo 'Copying database...'
 			cp -v ${gq_db} GQ_DATABASE
 			${gq_cmd} &> logs/${sample}.log
