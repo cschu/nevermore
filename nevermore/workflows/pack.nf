@@ -8,6 +8,8 @@ workflow nevermore_pack_reads {
 	
 	main:
 
+		/* re-add pair information, which might have been lost upstream */
+
 		fastq_ch = fastq_ch
 			.map { sample, fastqs ->
 			def meta = sample.clone()

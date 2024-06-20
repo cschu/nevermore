@@ -20,32 +20,66 @@ workflow nevermore_align {
 		fastq_ch
 
 	main:
+
+		alignment_ch = Channel.empty()
+		aln_counts_ch = Channel.empty()
+
 		/*	align merged single-read and paired-end sets against reference */
 
-		minimap2_align(
-			fastq_ch,
-			params.reference,
-			params.do_name_sort
-		)
+		if (params.align.run_minimap2) {
+			minimap2_align(
+				fastq_ch,
+				params.reference,
+				params.do_name_sort
+			)
 
-		/*	merge paired-end and single-read alignments into single per-sample bamfiles */
-
-		aligned_ch = minimap2_align.out.sam
+			minimap_aligned_ch = minimap2_align.out.sam
 			.map { sample, sam ->
 				sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
 				return tuple(sample_id, sam)
 			}
 			.groupTuple(sort: true)
 
-		// merge_and_sort(aligned_ch, true)
-		merge_sam(aligned_ch.map { sample_id, samfiles ->
-			def meta = [:]
-			meta.id = sample_id
-			return tuple(meta, samfiles)
-		})
+			/*	merge paired-end and single-read alignments into single per-sample bamfiles */
+			merge_sam(minimap_aligned_ch
+				.map { sample_id, samfiles ->
+					def meta = [:]
+					meta.id = sample_id
+					return tuple(meta, samfiles)
+			})
+
+			alignment_ch = alignment_ch
+				.mix(merge_sam.out.sam)			
+			aln_counts_ch = aln_counts_ch
+				.mix(merge_sam.out.flagstats)			
+			
+		}
+
+		if (params.align.run_bwa) {
+			bwa_mem_align(
+				fastq_ch,
+				params.reference,
+				true
+			)
+
+			/*	merge paired-end and single-read alignments into single per-sample bamfiles */
+
+			aligned_ch = bwa_mem_align.out.bam
+				.map { sample, bam ->
+					sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
+					return tuple(sample_id, bam)
+				}
+				.groupTuple(sort: true)
+
+			merge_and_sort(aligned_ch, true)
+
+			alignment_ch = alignment_ch
+				.mix(merge_and_sort.out.bam)
+			aln_counts_ch = aln_counts_ch
+				.mix(merge_and_sort.out.flagstats)
+		}
 
 	emit:
-		alignments = merge_sam.out.sam
-		aln_counts = merge_sam.out.flagstats
-
+		alignments = alignment_ch 
+		aln_counts = aln_counts_ch
 }

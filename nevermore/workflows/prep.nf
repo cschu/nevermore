@@ -15,9 +15,13 @@ def keep_orphans = (params.keep_orphans || false)
 
 def asset_dir = "${projectDir}/nevermore/assets"
 
+// this nonsense parameter-rearrangement is necessary for nf-core schema/clowm compatibility
+params.subsample_subset = null
+params.subsample_percentile = 100.0
 params.subsample = [:]
-params.subsample.random_seed = 313
-params.subsample.subset = "metaT"
+params.subsample.subset = params.subsample_subset
+params.subsample.percentile = params.subsample_percentile
+
 
 process concat_singles {
     input:
@@ -42,7 +46,7 @@ workflow nevermore_simple_preprocessing {
 
 	main:
 		rawcounts_ch = Channel.empty()
-		if (params.run_qa || (params.subsample.subset && params.subsample_percentile < 100.0 && params.subsample_percentile > 0.0)) {
+		if (params.run_qa || (params.subsample.subset && params.subsample.percentile < 100.0 && params.subsample.percentile > 0.0)) {
 
 			fastqc(fastq_ch, "raw")
 			rawcounts_ch = fastqc.out.counts
@@ -55,7 +59,7 @@ workflow nevermore_simple_preprocessing {
 				)
 			}
 
-			if (params.subsample.subset && params.subsample_percentile < 100.0 && params.subsample_percentile > 0.0) {
+			if (params.subsample.subset && params.subsample.percentile < 100.0 && params.subsample.percentile > 0.0) {
 
 				fastq_ch.dump(pretty: true, tag: "fastq_ch")
 				
@@ -77,7 +81,7 @@ workflow nevermore_simple_preprocessing {
 						.filter { params.subsample.subset == "all" || it[0].library_source == params.subsample.subset }
 						.map { sample, counts -> return counts }
 						.collect(),
-					params.subsample_percentile, 
+					params.subsample.percentile, 
 				)
 				calculate_library_size_cutoff.out.library_sizes.view()
 

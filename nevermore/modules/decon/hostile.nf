@@ -9,6 +9,9 @@ process hostile {
     tuple val(sample), path(fastqs)
 	path(db)
 
+    output:
+    tuple val(sample), path("no_host/${sample.id}/*.fastq.gz"), emit: reads
+
     script:
 
     def r1_files = fastqs.findAll( { it.name.endsWith("_R1.fastq.gz") } )

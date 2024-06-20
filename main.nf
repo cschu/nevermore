@@ -48,7 +48,7 @@ workflow {
 	if (!do_stream && do_alignment) {
 		nevermore_align(nevermore_main.out.fastqs)
 		align_ch = nevermore_align.out.alignments
-		counts_ch = counts_ch.concat(
+		counts_ch = counts_ch.mix(
 			nevermore_align.out.aln_counts
 				.map { sample, file -> return file }
 				.collect()
