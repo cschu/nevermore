@@ -21,7 +21,7 @@ def do_stream = params.gq_stream
 workflow nevermore_main {
 
 	take:
-		fastq_ch		
+		fastq_ch
 
 	main:
 		if (do_preprocessing) {

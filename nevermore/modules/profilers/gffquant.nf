@@ -138,22 +138,6 @@ process run_gffquant {
 
 params.gq_collate_columns = "uniq_scaled,combined_scaled"
 
-// process collate_feature_counts {
-
-// 	input:
-// 	tuple val(sample), path(count_tables), val(column)
-
-// 	output:
-// 	path("collated/*.txt.gz"), emit: collated, optional: true
-
-// 	script:
-// 	"""
-// 	mkdir -p collated/
-
-// 	collate_counts . -o collated/collated -c ${column}
-// 	"""
-// }
-
 process collate_feature_counts {
 	label "collate_profiles"
 

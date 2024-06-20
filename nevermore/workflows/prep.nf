@@ -16,8 +16,8 @@ def keep_orphans = (params.keep_orphans || false)
 def asset_dir = "${projectDir}/nevermore/assets"
 
 params.subsample = [:]
+params.subsample.random_seed = 313
 
-print asset_dir
 
 process concat_singles {
     input:
@@ -63,9 +63,6 @@ workflow nevermore_simple_preprocessing {
 						no_subsample: true
 					}
 					.set { check_subsample_ch }
-				// subsample_ch = fastq_ch
-				// 	.filter { params.subsample.subset == "all" || it[0].library_source == params.subsample.subset }
-				// subsample_ch.dump(pretty: true, tag: "subsample_ch")
 
 				calculate_library_size_cutoff(
 					fastqc.out.counts

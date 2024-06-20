@@ -16,7 +16,7 @@ workflow nevermore_align {
 	take:
 		fastq_ch
 
-	main:		
+	main:
 		/*	align merged single-read and paired-end sets against reference */
 
 		bwa_mem_align(
