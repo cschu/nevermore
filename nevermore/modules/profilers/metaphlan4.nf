@@ -1,6 +1,8 @@
 process run_metaphlan4 {
+	publishDir params.output_dir, mode: "copy"
 	container "quay.io/biocontainers/metaphlan:4.1.0--pyhca03a8a_0"
 	tag "${sample.id}"
+	label "process_high"
 	label "metaphlan4"
 	
 	input:
@@ -102,6 +104,7 @@ process combine_metaphlan4 {
 
 
 process collate_metaphlan4_tables {
+	publishDir params.output_dir, mode: "copy"
 	container "quay.io/biocontainers/metaphlan:4.1.0--pyhca03a8a_0"
 	label "metaphlan4"
 
