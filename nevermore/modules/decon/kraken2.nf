@@ -35,6 +35,7 @@ process remove_host_kraken2 {
 process remove_host_kraken2_individual {
 	container "registry.git.embl.de/schudoma/kraken2-docker:latest"
 	label 'kraken2'
+	label "process_high"
 
 	input:
 	tuple val(sample), path(fastqs)
