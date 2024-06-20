@@ -2,7 +2,9 @@
 
 params.subsample_random_seed = 313
 params.subsample = [:]
-params.subsample.random_seed = params.subsample_random_seed
+if (!params.subsample.random_seed) {
+	params.subsample.random_seed = params.subsample_random_seed
+}
 
 
 process calculate_library_size_cutoff {
