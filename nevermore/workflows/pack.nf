@@ -7,6 +7,16 @@ workflow nevermore_pack_reads {
 		fastq_ch
 	
 	main:
+
+		fastq_ch = fastq_ch
+			.map { sample, fastqs ->
+			def meta = sample.clone()
+			meta.is_paired = [fastqs].flatten().size() == 2
+			return tuple(meta, fastqs)
+		}
+
+		fastq_ch.dump(pretty: true, tag: "pack_fastq_ch")
+
 		/*	route all single-read files into a common channel */
 
 		single_ch = fastq_ch
