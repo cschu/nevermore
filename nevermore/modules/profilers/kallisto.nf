@@ -1,5 +1,6 @@
 process kallisto_index {
 	container "quay.io/biocontainers/kallisto:0.50.1--hc877fd6_1"
+	label "medium"
 
 	input:
 	tuple val(sample), path(genes)
@@ -22,6 +23,7 @@ params.profilers.kallisto.bootstrap = 100
 
 process kallisto_quant {
 	container "quay.io/biocontainers/kallisto:0.50.1--hc877fd6_1"
+	label "medium"
 
 	input:
 	tuple val(sample), path(fastqs), path(kallisto_index)

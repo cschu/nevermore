@@ -9,7 +9,8 @@ params.gq_ambig_mode = "1overN"
 process stream_gffquant {
 	publishDir params.output_dir, mode: "copy"
 	label "gffquant"
-	label "process_high"
+	label "large"
+
 	tag "gffquant.${sample}"
 
 	input:

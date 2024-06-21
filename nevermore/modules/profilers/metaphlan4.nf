@@ -107,6 +107,7 @@ process collate_metaphlan4_tables {
 	publishDir params.output_dir, mode: "copy"
 	container "quay.io/biocontainers/metaphlan:4.1.0--pyhca03a8a_0"
 	label "metaphlan4"
+	label "mini"
 
 	input:
 	path(tables)
