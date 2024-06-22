@@ -1,5 +1,6 @@
 process merge_single_fastqs {
-    container "docker://quay.io/biocontainers/bbmap:39.06--h92535d8_0"
+    container "quay.io/biocontainers/bbmap:39.06--h92535d8_0"
+    label "medium"
 
     input:
     tuple val(sample), path(fastqs)

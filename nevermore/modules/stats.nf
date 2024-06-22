@@ -1,5 +1,6 @@
 process flagstats {
-    container "docker://registry.git.embl.de/schudoma/align-docker:latest"
+    container "registry.git.embl.de/schudoma/align-docker:latest"
+    label "default"
 
     input:
     tuple val(sample), path(bam)

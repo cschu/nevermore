@@ -3,7 +3,6 @@
 nextflow.enable.dsl=2
 
 include { nevermore_simple_preprocessing } from "./prep"
-include { prepare_fastqs } from "../modules/converters/prepare_fastqs"
 include { fastqc } from "../modules/qc/fastqc"
 include { multiqc } from "../modules/qc/multiqc"
 include { collate_stats } from "../modules/collate"
@@ -21,7 +20,7 @@ def do_stream = params.gq_stream
 workflow nevermore_main {
 
 	take:
-		fastq_ch		
+		fastq_ch
 
 	main:
 		if (do_preprocessing) {
@@ -30,7 +29,7 @@ workflow nevermore_main {
 	
 			preprocessed_ch = nevermore_simple_preprocessing.out.main_reads_out
 			if (!params.drop_orphans) {
-				preprocessed_ch = preprocessed_ch.concat(nevermore_simple_preprocessing.out.orphan_reads_out)
+				preprocessed_ch = preprocessed_ch.mix(nevermore_simple_preprocessing.out.orphan_reads_out)
 			}
 
 			nevermore_decon(preprocessed_ch)
