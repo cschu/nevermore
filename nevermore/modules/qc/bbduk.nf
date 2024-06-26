@@ -4,6 +4,7 @@ params.qc_minlen = 45
 process qc_bbduk {
     container "quay.io/biocontainers/bbmap:39.06--h92535d8_0"
 	label 'bbduk'
+    label "medium"
     tag "${sample.id}"
 
 
