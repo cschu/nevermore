@@ -85,7 +85,12 @@ workflow nevermore_align {
 				}
 				.groupTuple(sort: true)
 
-			merge_and_sort(aligned_ch, true)
+			merge_and_sort(aligned_ch
+				.map { sample_id, bamfiles ->
+					def meta = [:]
+					meta.id = sample_id
+					return tuple(meta, samfiles)
+				}, true)
 
 			alignment_ch = alignment_ch
 				.mix(merge_and_sort.out.bam)
