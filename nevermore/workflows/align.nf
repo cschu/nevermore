@@ -12,7 +12,11 @@ def do_stream = params.gq_stream
 def do_preprocessing = (!params.skip_preprocessing || params.run_preprocessing)
 
 params.do_name_sort = true
-params.align = [:]
+
+if (params.align == null) {
+	params.align = [:]
+}
+
 params.align.run_minimap2 = false
 params.align.run_bwa = false
 
