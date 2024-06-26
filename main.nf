@@ -29,6 +29,7 @@ def do_preprocessing = (!params.skip_preprocessing || params.run_preprocessing)
 
 params.ignore_dirs = ""
 
+print "PARAMS-MAIN: ${params}"
 
 workflow {
 

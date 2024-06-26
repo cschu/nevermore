@@ -16,6 +16,7 @@ params.align = [:]
 params.align.run_minimap2 = false
 params.align.run_bwa = false
 
+print "PARAMS-ALIGN: ${params}"
 
 workflow nevermore_align {
 
