@@ -89,7 +89,7 @@ workflow nevermore_align {
 				.map { sample_id, bamfiles ->
 					def meta = [:]
 					meta.id = sample_id
-					return tuple(meta, samfiles)
+					return tuple(meta, bamfiles)
 				}, true)
 
 			alignment_ch = alignment_ch
