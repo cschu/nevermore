@@ -14,11 +14,17 @@ def do_preprocessing = (!params.skip_preprocessing || params.run_preprocessing)
 params.do_name_sort = true
 
 if (params.align == null) {
+
 	params.align = [:]
 }
 
-params.align.run_minimap2 = false
-params.align.run_bwa = false
+if (params.align.run_minimap2 == null) {
+	params.align.run_minimap2 = false
+}
+
+if (params.align.run_bwa == null) {
+	params.align.run_bwa = false
+}
 
 print "PARAMS-ALIGN: ${params}"
 
