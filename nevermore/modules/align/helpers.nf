@@ -16,7 +16,7 @@ process merge_and_sort {
 
     // need a better detection for this
     if (bamfiles instanceof Collection && bamfiles.size() >= 2) {
-        merge_cmd = "samtools merge -@ $task.cpus ${sort_order} bam/${sample.id}.bam ${bamfiles}"
+        merge_cmd = "samtools merge -c -@ $task.cpus ${sort_order} bam/${sample.id}.bam ${bamfiles}"
     } else {
         merge_cmd = "ln -s ../${bamfiles[0]} bam/${sample.id}.bam"
     }
