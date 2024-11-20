@@ -34,6 +34,7 @@ process transfer_bams {
 
 
 process prepare_fastqs {
+	label "default"
 
 	input:
 		tuple val(sample), path(files), val(remote_input), val(library_suffix)
@@ -105,18 +106,18 @@ workflow fastq_input {
 			ignore_samples = params.ignore_samples.split(",")
 			print "Ignoring samples: ${ignore_samples}"
 			fastq_ch = fastq_ch
-	 			.filter { !ignore_samples.contains(it[0]) }
+				.filter { !ignore_samples.contains(it[0]) }
 		}
-		
+
 		fastq_ch.dump(pretty: true, tag: "fastq_ch")
 		prepare_fastqs(fastq_ch)
 		prepare_fastqs.out.singles.mix(prepare_fastqs.out.pairs).dump(pretty: true, tag: "prepare_fastqs_out")
 
 		library_info_ch = prepare_fastqs.out.library_info
-		 	.splitCsv(header:false, sep:'\t', strip:true)
-		 	.map { row -> 
-		 		return tuple(row[0], row[1])
-		 	}
+			.splitCsv(header:false, sep:'\t', strip:true)
+			.map { row ->
+				return tuple(row[0], row[1])
+			}
 
 		prepped_fastq_ch = prepare_fastqs.out.singles
 			.map { sample_id, files -> return tuple("${sample_id}.singles", files, false) }
@@ -131,7 +132,7 @@ workflow fastq_input {
 				meta.library = (library_is_paired == "1") ? "paired" : "single"
 				return tuple(meta, [files].flatten())
 			}
-		prepped_fastq_ch.dump(pretty: true, tag: "prepped_fastq_ch")		
+		prepped_fastq_ch.dump(pretty: true, tag: "prepped_fastq_ch")
 
 	emit:
 		fastqs = prepped_fastq_ch

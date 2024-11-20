@@ -34,8 +34,7 @@ print "PARAMS-MAIN: ${params}"
 workflow {
 
 	fastq_input(
-		Channel.fromPath(input_dir + "/*", type: "dir")
-			.filter { !params.ignore_dirs.split(",").contains(it.name) },
+		Channel.fromPath(input_dir + "/**"),
 		Channel.of(null)
 	)
 
