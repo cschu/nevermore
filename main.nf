@@ -69,7 +69,7 @@ workflow {
 			}
 			.groupTuple()
 			.map { sample_id, fastqs -> return tuple(sample_id, [fastqs].flatten()) }
-			gq_input_ch.dump(pretty: true, tag: gq_input_ch)
+			gq_input_ch.dump(pretty: true, tag: "gq_input_ch")
 
 		} else {
 
