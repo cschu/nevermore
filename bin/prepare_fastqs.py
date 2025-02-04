@@ -22,6 +22,19 @@ logger = logging.getLogger(__name__)
 
 
 def check_pairwise(r1, r2):
+	d = {}
+	for prefix, fn in itertools.chain(r1, r2):
+		d.setdefault(prefix[:-1], []).append((prefix, fn))
+	for prefix, reads in d.items():
+		if len(reads) == 2:
+			yield reads[0][1], reads[1][1]
+		elif len(reads) == 1:
+			yield (None, reads[0][1]) if reads[0][0][-1] == "2" else (reads[0][1], None)
+		else:
+			raise ValueError(f"Weird number of reads found: {reads}")
+
+
+def check_pairwise_old(r1, r2):
 	""" Checks if two sets of read files contain the same prefixes.
 
 	Input:
@@ -80,11 +93,13 @@ def transfer_multifiles(files, dest, remote_input=False, compression=None):
 		if compression in ("gz", "bz2"):
 			# multiple compressed files can just be concatenated
 			logging.debug('transfer_multifiles: compression=%s, remote_input=%s, action=concatenate', compression, remote_input)
+			logging.debug('  cmd: %s', ' '.join(cat_cmd))
 			with open(dest, "wt") as _out:
 				subprocess.run(cat_cmd, stdout=_out)
 		else:
 			# multiple uncompressed files will be cat | gzipped
 			logging.debug('transfer_multifiles: compression=%s, remote_input=%s, action=concatenate+gzip', compression, remote_input)
+			logging.debug('  cmd: %s', ' | '.join((' '.join(cat_cmd), "gzip -c -")))
 			cat_pr = subprocess.Popen(cat_cmd, stdout=subprocess.PIPE)
 			with open(dest, "wt") as _out:
 				subprocess.run(("gzip", "-c", "-"), stdin=cat_pr.stdout, stdout=_out)
@@ -176,18 +191,29 @@ def process_sample(
 		r2 = [(p, f) for p, f in zip(prefixes, fastqs) if rx_filter(p, x=2)]
 		others = sorted(list(set(fastqs).difference({f for _, f in r1}).difference({f for _, f in r2})))
 
-		# check if R1/R2 sets have equal sizes or are empty
-		# R1 empty: potential scRNAseq (or any protocol with barcode reads in R1)
-		# R2 empty: typical single end reads with (R?)1 suffix
-		assert len(r2) == 0 or len(r1) == 0 or (r1 and len(r1) == len(r2)), "R1/R2 sets are not of the same length"
+		if False:
+			# check if R1/R2 sets have equal sizes or are empty
+			# R1 empty: potential scRNAseq (or any protocol with barcode reads in R1)
+			# R2 empty: typical single end reads with (R?)1 suffix
+			assert len(r2) == 0 or len(r1) == 0 or (r1 and len(r1) == len(r2)), "R1/R2 sets are not of the same length"
 
-		# if R1 and R2 are of equal size, check if the prefixes match
-		if len(r1) == len(r2) and r1:
-			check_pairwise(r1, r2)
+			# if R1 and R2 are of equal size, check if the prefixes match
+			if len(r1) == len(r2) and r1:
+				check_pairwise(r1, r2)
 
-		# sort R1/R2 for concatenation, get rid of prefixes
-		r1 = sorted(f for _, f in r1)
-		r2 = sorted(f for _, f in r2)
+			# sort R1/R2 for concatenation, get rid off prefixes
+			r1 = sorted(f for _, f in r1)
+			r2 = sorted(f for _, f in r2)
+		else:
+			reads = list(check_pairwise(r1, r2))
+			if reads:
+				others += [
+					r1 or r2
+					for r1, r2 in reads
+					if r1 is None or r2 is None
+				]
+				r1, r2 = zip(*((f1, f2) for f1, f2 in reads if f1 and f2))
+
 
 		print("R1", r1, file=sys.stderr)
 		print("R2", r2, file=sys.stderr)
