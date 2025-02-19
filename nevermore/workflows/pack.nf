@@ -54,7 +54,7 @@ workflow nevermore_pack_reads {
 			}
 		.set { single_reads_ch }
 
-		def se_group_size = 2 - (params.drop_orphans ? 1 : 0)
+		def se_group_size = 2 - ((params.single_end_libraries || params.drop_orphans) ? 1 : 0)
 
 		single_reads_ch.paired_end
 			.groupTuple(sort: true, size: se_group_size, remainder: true)
@@ -68,7 +68,17 @@ workflow nevermore_pack_reads {
 
 		/*	then merge single-read file groups into single files */
 
-		merge_single_fastqs(merged_single_ch)
+		if (params.single_end_libraries) {
+
+			merged_ch = Channel.empty()
+
+		} else {
+
+			merge_single_fastqs(merged_single_ch)
+			merged_ch = Channel.empty()
+				.mix(merge_single_fastqs.out.fastq)
+
+		}
 
 		/* 	take all single-read files except for the qc-survivors,
 			concat with merged single-read files (takes care of single-end qc-survivors),
@@ -88,12 +98,14 @@ workflow nevermore_pack_reads {
 			.mix(pe_singles_ch.no_merge)
 			.mix(single_reads_ch.single_end)
 			.mix(paired_ch)
-			.mix(merge_single_fastqs.out.fastq)
+			.mix(merged_ch)
+			// .mix(merge_single_fastqs.out.fastq)
 
 		fastq_prep_ch = paired_ch
 			.mix(single_reads_ch.single_end)
 			.mix(pe_singles_ch.no_merge)
-			.mix(merge_single_fastqs.out.fastq)
+			// .mix(merge_single_fastqs.out.fastq)
+			.mix(merged_ch)
 
 	emit:
 		fastqs = fastq_prep_ch
