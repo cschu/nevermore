@@ -1,8 +1,4 @@
 {
-<<<<<<< HEAD
-	"version": "0.14.7"
-=======
 	"base_version": "0.14.8",
 	"local_version": "0.14.8_0.0"
->>>>>>> main
 }
