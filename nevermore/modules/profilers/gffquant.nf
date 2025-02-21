@@ -23,7 +23,7 @@ process stream_gffquant {
 		tuple val(sample), path("logs/${sample}.log")
 		tuple val(sample), path("alignments/${sample}/${sample}*.sam"), emit: alignments, optional: true
 		path("${sample}"), emit: profile_dir
-		tuple val(sample), path("${sample}.gene_ids.txt"), emit: gene_ids
+		tuple val(sample), path("${sample}/${sample}.gene_ids.txt"), emit: gene_ids
 
 	script:
 			def gq_output = "-o ${sample}/${sample}"
