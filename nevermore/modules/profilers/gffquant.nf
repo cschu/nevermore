@@ -8,7 +8,7 @@ params.gq_ambig_mode = "1overN"
 
 process stream_gffquant {
 	tag "gffquant.${sample}"
-	publishDir "${params.output_dir}/profiles", mode: "copy", pattern: "*.{txt.gz,pd.txt}"
+	publishDir "${params.output_dir}/profiles", mode: "copy", pattern: "**.{txt.gz,pd.txt}"
 	publishDir "${params.output_dir}", mode: "copy", pattern: "logs/*.log"
 	label "gffquant"
 	label "large"
