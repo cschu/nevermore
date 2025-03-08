@@ -67,7 +67,7 @@ process stream_gffquant {
 
 			}
 	
-			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db GQ_DATABASE --aligner ${params.gq_aligner} ${input_files}"
+			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db \$GQ_DATABASE --aligner ${params.gq_aligner} ${input_files}"
 			
 			// echo 'Copying database...'
 			// cp -v \$(dirname \$(readlink ${gq_db}))/*sqlite3 GQ_DATABASE
