@@ -17,13 +17,13 @@ process hostile {
     def r1_files = fastqs.findAll( { it.name.endsWith("_R1.fastq.gz") } )
 	def r2_files = fastqs.findAll( { it.name.endsWith("_R2.fastq.gz") } )
 
-    def rename_r1 = "mv -v no_host/${sample.id}_R1.clean.fastq.gz no_host/${sample.id}_R1.fastq.gz"
+    def rename_r1 = "mv -v no_host/${sample.id}/${sample.id}_R1.clean.fastq.gz no_host/${sample.id}_R1.fastq.gz"
     def rename_r2 = ""
 
     def r2_input = ""
     if (r2_files.size() != 0) {
         r2_input = "--fastq2 ${r2_files[0]}"
-        rename_r2 = "mv -v no_host/${sample.id}_R2.clean.fastq.gz no_host/${sample.id}_R2.fastq.gz"
+        rename_r2 = "mv -v no_host/${sample.id}/${sample.id}_R2.clean.fastq.gz no_host/${sample.id}_R2.fastq.gz"
     }
 
     """
