@@ -31,7 +31,7 @@ process hostile {
 
     export HOSTILE_CACHE_DIR=\$(dirname \$(readlink ${db}))
 
-    hostile clean --fastq1 ${r1_files[0]} ${r2_input} --aligner ${params.hostile.aligner} --index \$(readlink ${db}) --threads ${task.cpus} --out-dir no_host/${sample.id} --force 
+    hostile clean --fastq1 ${r1_files[0]} ${r2_input} --aligner ${params.hostile.aligner} --index \$(readlink ${db}) --threads ${task.cpus} --output no_host/${sample.id} --force 
 
     ${rename_r1}
     ${rename_r2}
