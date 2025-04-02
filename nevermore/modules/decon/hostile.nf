@@ -3,7 +3,7 @@ params.hostile = [:]
 params.hostile.aligner = "bowtie2"
 
 process hostile {
-    container "quay.io/biocontainers/hostile:1.1.0--pyhdfd78af_0"
+    container "quay.io/biocontainers/hostile:2.0.0--pyhdfd78af_0"
 
     input:
     tuple val(sample), path(fastqs)
