@@ -9,7 +9,7 @@ params.gq_restrict_metrics = "raw,lnorm,scaled,rpkm"
 
 process stream_gffquant {
 	tag "gffquant.${sample}"
-	publishDir "${params.output_dir}/profiles", mode: "copy", pattern: "*.{txt.gz,pd.txt}"
+	// publishDir "${params.output_dir}/profiles", mode: "copy", pattern: "*.{txt.gz,pd.txt}"
 	publishDir "${params.output_dir}", mode: "copy", pattern: "logs/*.log"
 	label "gffquant"
 	label "large"
