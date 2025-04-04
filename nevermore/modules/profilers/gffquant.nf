@@ -4,6 +4,7 @@ params.gq_single_end_library = params.single_end_library
 params.gq_min_identity = params.min_identity
 params.gq_mode = "genes"
 params.gq_ambig_mode = "1overN"
+params.gq_restrict_metrics = "raw,lnorm,scaled,rpkm"
 
 
 process stream_gffquant {
@@ -33,7 +34,7 @@ process stream_gffquant {
 			gq_params += (params.gq_min_identity) ? (" --min_identity " + params.gq_min_identity) : ""
 			// LEGACY PARAMETERS, partially not implemented in newer gffquant
 			// gq_params += (params.gq_strand_specific) ? " --strand_specific" : ""
-			// gq_params += (params.gq_restrict_metrics) ? " --restrict_metrics ${params.gq_restrict_metrics}" : ""
+			gq_params += (params.gq_restrict_metrics) ? " --restrict_metrics ${params.gq_restrict_metrics}" : ""
 			// gq_params += (params.gq_keep_alignments) ? " --keep_alignment_file ${sample}.sam" : ""
 			// gq_params += (params.gq_unmarked_orphans) ? " --unmarked_orphans" : ""
 			def mkdir_alignments = (params.keep_alignment_file != null && params.keep_alignment_file != false) ? "mkdir -p alignments/${sample}/" : ""
