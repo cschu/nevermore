@@ -26,7 +26,7 @@ process merge_single_fastqs {
     set -e -o pipefail
     mkdir -p merged/
 
-    ${prefix} sortbyname.sh -Xmx${maxmem}g qin=33 in=${fastq_in} out=merged/${sample.id}_R1.fastq.gz ${suffix}
+    ${prefix} sortbyname.sh -da -Xmx${maxmem}g qin=33 in=${fastq_in} out=merged/${sample.id}_R1.fastq.gz ${suffix}
     """
     // https://stackoverflow.com/questions/22464786/ignoring-bash-pipefail-for-error-code-141/72985727#72985727
 }
