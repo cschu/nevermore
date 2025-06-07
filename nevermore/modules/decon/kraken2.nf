@@ -1,35 +1,6 @@
 params.kraken2_min_hit_groups = 10
 params.fix_read_ids = true
 
-process remove_host_kraken2 {
-	container "registry.git.embl.de/schudoma/kraken2-docker:latest"
-	label 'kraken2'
-
-    input:
-    tuple val(sample), path(fq)
-	path(kraken_db)
-
-    output:
-    tuple val(sample), path("no_host/${sample.id}/${sample.id}_R*.fastq.gz"), emit: reads
-
-    script:
-    def out_options = (sample.is_paired) ? "--paired --unclassified-out ${sample.id}#.fastq" : "--unclassified-out ${sample.id}_1.fastq"
-    def move_r2 = (sample.is_paired) ? "gzip -c ${sample.id}_2.fastq > no_host/${sample.id}/${sample.id}_R2.fastq.gz" : ""
-
-	def kraken2_call = "kraken2 --threads $task.cpus --db ${kraken_db} --report-minimizer-data --gzip-compressed --minimum-hit-groups ${params.kraken2_min_hit_groups}"
-
-    """
-    mkdir -p no_host/${sample.id}
-	mkdir -p stats/decon/
-
-    ${kraken2_call} ${out_options} --output stats/decon/${sample.id}.kraken_read_report.txt --report stats/decon/${sample.id}.kraken_report.txt $fq
-
-    gzip -c ${sample.id}_1.fastq > no_host/${sample.id}/${sample.id}_R1.fastq.gz
-    ${move_r2}
-    """
-}
-
-
 process remove_host_kraken2_individual {
 	container "registry.git.embl.de/schudoma/kraken2-docker:latest"
 	label 'kraken2'
@@ -46,31 +17,47 @@ process remove_host_kraken2_individual {
 	tuple val(sample), path("no_host/${sample.id}/KRAKEN_FINISHED"), emit: sentinel
 
 	script:
-	def kraken2_call = "kraken2 --threads $task.cpus --db ${kraken_db} --report-minimizer-data --gzip-compressed --minimum-hit-groups ${params.kraken2_min_hit_groups}"
+	def kraken2_call = "kraken2 --threads ${task.cpus} --db ${kraken_db} --report-minimizer-data --gzip-compressed --minimum-hit-groups ${params.kraken2_min_hit_groups}"
 
 	def r1_files = fastqs.findAll( { it.name.endsWith("_R1.fastq.gz") } )
 	def r2_files = fastqs.findAll( { it.name.endsWith("_R2.fastq.gz") } )
 
-	def kraken_cmd = ""
 	def fix_read_id_str = ""
-	def postprocessing = ""
-	if (r1_files.size() != 0) {		
-		kraken_cmd += "${kraken2_call} --unclassified-out ${sample.id}_1.fastq --output stats/decon/${sample.id}.kraken_read_report_1.txt --report stats/decon/${sample.id}.kraken_report_1.txt ${r1_files[0]}\n"
-		
-		if (params.fix_read_ids) {
-			fix_read_id_str += "seqtk rename ${sample.id}_1.fastq read | cut -f 1 -d ' ' > ${sample.id}_1.fastq.renamed && mv -v ${sample.id}_1.fastq.renamed ${sample.id}_1.fastq\n"
+	if (params.fix_read_ids) {
+		if (r1_files.size() != 0 ) {
+			fix_read_id_str += "zcat ${r1_files[0]} | seqtk rename - read > reads_R1.fastq\n"
 		}
 		if (r2_files.size() != 0) {
-			kraken_cmd += "${kraken2_call} --unclassified-out ${sample.id}_2.fastq --output stats/decon/${sample.id}.kraken_read_report_2.txt --report stats/decon/${sample.id}.kraken_report_2.txt ${r2_files[0]}\n"
+			fix_read_id_str += "zcat ${r2_files[0]} | seqtk rename - read > reads_R2.fastq\n"
+		}
+	} else {
+		if (r1_files.size() != 0 ) {
+			fix_read_id_str += "zcat ${r1_files[0]} > reads_R1.fastq\n"
+		}
+		if (r2_files.size() != 0 ) {
+			fix_read_id_str += "zcat ${r2_files[0]} > reads_R2.fastq\n"
+		}
+	}
+
+
+	def kraken_cmd = ""
+	def postprocessing = ""
+
+	if (r1_files.size() != 0) {		
+		kraken_cmd += "${kraken2_call} --unclassified-out ${sample.id}_1.fastq --output stats/decon/${sample.id}.kraken_read_report_1.txt --report stats/decon/${sample.id}.kraken_report_1.txt reads_R1.fastq\n"
+		
+		// if (params.fix_read_ids) {
+		// 	fix_read_id_str += "seqtk rename ${sample.id}_1.fastq read | cut -f 1 -d ' ' > ${sample.id}_1.fastq.renamed && mv -v ${sample.id}_1.fastq.renamed ${sample.id}_1.fastq\n"
+		// }
+		if (r2_files.size() != 0) {
+			kraken_cmd += "${kraken2_call} --unclassified-out ${sample.id}_2.fastq --output stats/decon/${sample.id}.kraken_read_report_2.txt --report stats/decon/${sample.id}.kraken_report_2.txt reads_R2.fastq\n"
 			
-			if (params.fix_read_ids) {
-				fix_read_id_str += "seqtk rename ${sample.id}_2.fastq read | cut -f 1 -d ' ' > ${sample.id}_2.fastq.renamed && mv -v ${sample.id}_2.fastq.renamed ${sample.id}_2.fastq\n"
-			}
+			// if (params.fix_read_ids) {
+			// 	fix_read_id_str += "seqtk rename ${sample.id}_2.fastq read | cut -f 1 -d ' ' > ${sample.id}_2.fastq.renamed && mv -v ${sample.id}_2.fastq.renamed ${sample.id}_2.fastq\n"
+			// }
 
 			postprocessing += """
 			if [[ -f ${sample.id}_1.fastq || -f ${sample.id}_2.fastq ]]; then
-
-				${fix_read_id_str}
 
 				mkdir -p tmp/
 				awk 'NR%4==1' *.fastq | sed 's/^@//' | cut -f 1 -d ' ' | sed 's/\\/[12]//' | sort -T tmp/ | uniq -c | sed 's/^\\s\\+//' > union.txt
@@ -115,6 +102,7 @@ process remove_host_kraken2_individual {
 
 	mkdir -p no_host/${sample.id} stats/decon/ 
 
+	${fix_read_id_str}
 	${kraken_cmd}
 	${postprocessing}
 
@@ -176,4 +164,32 @@ process remove_host_kraken2_individual {
 	// 	"""
 	// }
 
+}
+
+process remove_host_kraken2 {
+	container "registry.git.embl.de/schudoma/kraken2-docker:latest"
+	label 'kraken2'
+
+    input:
+    tuple val(sample), path(fq)
+	path(kraken_db)
+
+    output:
+    tuple val(sample), path("no_host/${sample.id}/${sample.id}_R*.fastq.gz"), emit: reads
+
+    script:
+    def out_options = (sample.is_paired) ? "--paired --unclassified-out ${sample.id}#.fastq" : "--unclassified-out ${sample.id}_1.fastq"
+    def move_r2 = (sample.is_paired) ? "gzip -c ${sample.id}_2.fastq > no_host/${sample.id}/${sample.id}_R2.fastq.gz" : ""
+
+	def kraken2_call = "kraken2 --threads $task.cpus --db ${kraken_db} --report-minimizer-data --gzip-compressed --minimum-hit-groups ${params.kraken2_min_hit_groups}"
+
+    """
+    mkdir -p no_host/${sample.id}
+	mkdir -p stats/decon/
+
+    ${kraken2_call} ${out_options} --output stats/decon/${sample.id}.kraken_read_report.txt --report stats/decon/${sample.id}.kraken_report.txt $fq
+
+    gzip -c ${sample.id}_1.fastq > no_host/${sample.id}/${sample.id}_R1.fastq.gz
+    ${move_r2}
+    """
 }

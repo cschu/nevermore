@@ -68,19 +68,17 @@ process stream_gffquant {
 
 			}
 	
-			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db GQ_DATABASE --aligner ${params.gq_aligner} ${input_files}"
+			def gq_cmd = "gffquant ${gq_output} ${gq_params} --db \$GQ_DATABASE --aligner ${params.gq_aligner} ${input_files}"
 			
 			"""
 			set -e -o pipefail
 			mkdir -p logs/ tmp/
 			${mkdir_alignments}
-			echo 'Copying database...'
-			cp -v \$(dirname \$(readlink ${gq_db}))/*sqlite3 GQ_DATABASE
-
+			GQ_DATABASE=\$(dirname \$(readlink ${gq_db}))/*sqlite3
 
 			${gq_cmd} --reference \$(readlink ${gq_db}) &> logs/${sample}.log
 			gzip -dc ${sample}/${sample}.gene_counts.txt.gz | cut -f 1 > ${sample}/${sample}.gene_ids.txt
-			rm -rfv GQ_DATABASE* tmp/
+			rm -rfv tmp/
 			"""
 
 }
