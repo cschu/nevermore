@@ -61,22 +61,8 @@ workflow nevermore_main {
 		collate_stats(collate_ch.collect())
 
 
-		preprocessed_fastq_ch = nevermore_pack_reads.out.fastqs
-			.map { sample, fastqs ->
-				sample_id = sample.id.replaceAll(/\.singles$/, "")
-				return [ sample_id, sample.is_paired, fastqs ]  //tuple(sample_id, fastqs)
-			}
-			.groupTuple(size: ((params.single_end_libraries) ? 1 : 2), remainder: true)
-			.map { sample_id, pair_info, fastqs ->
-				def meta = [:]
-				meta.id = sample_id
-				// meta.is_paired = pair_info.contains(true)
-				return tuple(meta, [fastqs].flatten())
-			}
-
 	emit:
-		// fastqs = nevermore_pack_reads.out.fastqs
-		fastqs = preprocessed_fastq_ch
+		fastqs = nevermore_pack_reads.out.fastqs
 		readcounts = collate_ch
 
 }
