@@ -35,19 +35,16 @@ process merge_sam {
 
     input:
     tuple val(sample), path(samfiles)
-    // val(do_name_sort)
-
+    
     output:
     tuple val(sample), path("sam/${sample.id}.sam"), emit: sam
     tuple val(sample), path("stats/sam/${sample.id}.flagstats.txt"), emit: flagstats
 
     script:
-    // def sort_order = (do_name_sort) ? "-n" : ""
     def merge_cmd = ""
 
     // need a better detection for this
     if (samfiles instanceof Collection && samfiles.size() >= 2) {
-        // merge_cmd = "samtools merge -@ $task.cpus ${sort_order} bam/${sample.id}.bam ${bamfiles}"
         merge_cmd += "samtools view --no-PG -Sh ${samfiles[0]} > sam/${sample.id}.sam\n"
         merge_cmd += "samtools view -S ${samfiles[1]} >> sam/${sample.id}.sam"
 
