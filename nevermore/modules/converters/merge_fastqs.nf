@@ -1,6 +1,7 @@
 process merge_single_fastqs {
     container "quay.io/biocontainers/bbmap:39.06--h92535d8_0"
     label "medium"
+    tag "${sample.id}"
 
     input:
     tuple val(sample), path(fastqs)
