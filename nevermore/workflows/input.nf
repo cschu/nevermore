@@ -35,7 +35,8 @@ process transfer_bams {
 
 process prepare_fastqs {
 	// container "ghcr.io/astral-sh/uv:python3.14-trixie-slim"
-	container "registry.git.embl.org/schudoma/portraits_metatraits:latest"
+	// container "registry.git.embl.org/schudoma/portraits_metatraits:latest"
+	container "quay.io/biocontainers/pandas:2.2.1"
 	label "default"
 
 	input:
