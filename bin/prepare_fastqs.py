@@ -145,7 +145,7 @@ def process_sample(
 		dest = os.path.join(sample_dir, f"{sample}_R1.fastq.{dest_compression}")
 		transfer_file(fastqs[0], dest, remote_input=remote_input)
 
-		yield sample, False
+		yield sample, False, 1
 
 	elif fastqs:
 
@@ -185,9 +185,7 @@ def process_sample(
 			return re.search(r"[._R]" + str(x) + r"$", s) and not re.search(r"(orphan|single)s?", s)
 
 		# partition fastqs into R1, R2, and 'other' sets
-		# r1 = [(p, f) for p, f in zip(prefixes, fastqs) if re.search(r"[._R]1$", p)]
 		r1 = [(p, f) for p, f in zip(prefixes, fastqs) if rx_filter(p, x=1)]
-		# r2 = [(p, f) for p, f in zip(prefixes, fastqs) if re.search(r"[._R]2$", p)]
 		r2 = [(p, f) for p, f in zip(prefixes, fastqs) if rx_filter(p, x=2)]
 		others = sorted(list(set(fastqs).difference({f for _, f in r1}).difference({f for _, f in r2})))
 
@@ -228,18 +226,21 @@ def process_sample(
 
 			pathlib.Path(sample_dir).mkdir(parents=True, exist_ok=True)
 
+			n_parts = 0
 			if r1:
 				# if R1 is not empty, transfer R1-files
+				n_parts += 1
 				dest = os.path.join(sample_dir, f"{sample}_R1.fastq.{dest_compression}")
 				transfer_multifiles(r1, dest, remote_input=remote_input, compression=compression)
 			if r2:
 				# if R2 is not empty, transfer R2-files,
 				# if R1 is empty, rename R2 to R1 so that files can be processed as normal single-end
+				n_parts += 1
 				target_r = "R2" if r1 else "R1"
 				dest = os.path.join(sample_dir, f"{sample}_{target_r}.fastq.{dest_compression}")
 				transfer_multifiles(r2, dest, remote_input=remote_input, compression=compression)
 		
-			yield sample, bool(r1 and r2)
+			yield sample, bool(r1 and r2), bool(r1 or r2) + bool(others)
 
 		if others:
 			# if single-end reads exist,
@@ -252,7 +253,7 @@ def process_sample(
 			dest = os.path.join(sample_dir, f"{sample}_R1.fastq.{dest_compression}")
 			transfer_multifiles(others, dest, remote_input=remote_input, compression=compression)
 
-			yield sample, bool(r1 or r2)
+			yield sample, bool(r1 or r2), bool(r1 or r2) + bool(others)
 		
 
 def is_fastq(f, valid_fastq_suffixes, valid_compression_suffixes):
@@ -309,6 +310,7 @@ def main():
 	ap.add_argument("--valid-fastq-suffixes", type=str, default="fastq,fq")
 	ap.add_argument("--valid-compression-suffixes", type=str, default="gz,bz2")
 	ap.add_argument("--add_sample_suffix", type=str)
+	ap.add_argument("--override_pair_check", action="store_true")
 
 	args = ap.parse_args()
 
@@ -370,8 +372,8 @@ def main():
 			except Exception as e:
 				raise ValueError(f"Encountered problems processing sample '{sample}': {e}.\nPlease check your file names.")
 			else:
-				for sample, is_paired in renamed:
-					print(sample, int(is_paired), sep="\t", file=lib_out)
+				for sample, is_paired, n_parts in renamed:
+					print(sample, int(is_paired), n_parts, sep="\t", file=lib_out)
 
 if __name__ == "__main__":
 	main()
