@@ -4,6 +4,7 @@ params.hostile.aligner = "bowtie2"
 
 process hostile {
     container "quay.io/biocontainers/hostile:2.0.0--pyhdfd78af_0"
+    tag "${sample.id}"
 
     input:
     tuple val(sample), path(fastqs)
