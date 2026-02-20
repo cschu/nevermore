@@ -17,7 +17,7 @@ process remove_host_kraken2_individual {
 	tuple val(sample), path("no_host/${sample.id}/KRAKEN_FINISHED"), emit: sentinel
 
 	script:
-	def kraken2_call = "kraken2 --threads ${task.cpus} --db ${kraken_db} --report-minimizer-data --gzip-compressed --minimum-hit-groups ${params.kraken2_min_hit_groups}"
+	def kraken2_call = "kraken2 --threads ${task.cpus} --db ${kraken_db} --report-minimizer-data --minimum-hit-groups ${params.kraken2_min_hit_groups}"
 
 	def r1_files = fastqs.findAll( { it.name.endsWith("_R1.fastq.gz") } )
 	def r2_files = fastqs.findAll( { it.name.endsWith("_R2.fastq.gz") } )
@@ -44,53 +44,59 @@ process remove_host_kraken2_individual {
 	def postprocessing = ""
 
 	if (r1_files.size() != 0) {		
-		kraken_cmd += "${kraken2_call} --unclassified-out ${sample.id}_1.fastq --output stats/decon/${sample.id}.kraken_read_report_1.txt --report stats/decon/${sample.id}.kraken_report_1.txt reads_R1.fastq\n"
+		kraken_cmd += "${kraken2_call} --unclassified-out reads_decon_1.fastq --output stats/decon/${sample.id}.kraken_read_report_1.txt --report stats/decon/${sample.id}.kraken_report_1.txt reads_R1.fastq\n"
 		
 		// if (params.fix_read_ids) {
 		// 	fix_read_id_str += "seqtk rename ${sample.id}_1.fastq read | cut -f 1 -d ' ' > ${sample.id}_1.fastq.renamed && mv -v ${sample.id}_1.fastq.renamed ${sample.id}_1.fastq\n"
 		// }
 		if (r2_files.size() != 0) {
-			kraken_cmd += "${kraken2_call} --unclassified-out ${sample.id}_2.fastq --output stats/decon/${sample.id}.kraken_read_report_2.txt --report stats/decon/${sample.id}.kraken_report_2.txt reads_R2.fastq\n"
+			kraken_cmd += "${kraken2_call} --unclassified-out reads_decon_2.fastq --output stats/decon/${sample.id}.kraken_read_report_2.txt --report stats/decon/${sample.id}.kraken_report_2.txt reads_R2.fastq\n"
 			
 			// if (params.fix_read_ids) {
 			// 	fix_read_id_str += "seqtk rename ${sample.id}_2.fastq read | cut -f 1 -d ' ' > ${sample.id}_2.fastq.renamed && mv -v ${sample.id}_2.fastq.renamed ${sample.id}_2.fastq\n"
 			// }
 
 			postprocessing += """
-			if [[ -f ${sample.id}_1.fastq || -f ${sample.id}_2.fastq ]]; then
+			if [[ -f reads_decon_1.fastq || -f reads_decon_2.fastq ]]; then
 
 				mkdir -p tmp/
-				awk 'NR%4==1' ${sample.id}_?.fastq | sed 's/^@//' | cut -f 1 -d ' ' | sed 's/\\/[12]//' | sort -T tmp/ | uniq -c | sed 's/^\\s\\+//' > union.txt
+				awk 'NR%4==1' reads_decon_?.fastq | sed 's/^@//' | cut -f 1 -d ' ' | sed 's/\\/[12]//' | sort -T tmp/ | uniq -c | sed 's/^\\s\\+//' > union.txt
 				rm -rf tmp/
 
-				((grep '^1' union.txt | cut -f 2 -d " ") || true) > chimeras.txt
+				# ((grep '^1' union.txt | cut -f 2 -d " ") || true) > chimeras.txt
 				((grep '^2' union.txt | cut -f 2 -d " ") || true) > pairs.txt
 
-				seqtk subseq ${sample.id}_1.fastq chimeras.txt >> chimeras.fastq
-				seqtk subseq ${sample.id}_1.fastq <(sed "s:\$:/1:" chimeras.txt) >> chimeras.fastq
-				seqtk subseq ${sample.id}_2.fastq chimeras.txt >> chimeras.fastq
-				seqtk subseq ${sample.id}_2.fastq <(sed "s:\$:/2:" chimeras.txt) >> chimeras.fastq
+				# seqtk subseq reads_decon_1.fastq chimeras.txt >> chimeras.fastq
+				# seqtk subseq reads_decon_2.fastq chimeras.txt >> chimeras.fastq
+				# if [[ ! -s chimeras.fastq ]]; then
+				# 	seqtk subseq reads_decon_1.fastq <(sed "s:\$:/1:" chimeras.txt) >> chimeras.fastq
+				#	seqtk subseq reads_decon_2.fastq <(sed "s:\$:/2:" chimeras.txt) >> chimeras.fastq
+				# fi
 
-				if [[ ! -z "\$(head -n 1 chimeras.fastq)" ]]; then
-					mv chimeras.fastq no_host/${sample.id}/${sample.id}.chimeras_R1.fastq
-					gzip no_host/${sample.id}/${sample.id}.chimeras_R1.fastq
+				# if [[ ! -z "\$(head -n 1 chimeras.fastq)" ]]; then
+				#	mv chimeras.fastq no_host/${sample.id}/${sample.id}.chimeras_R1.fastq
+				# 	gzip no_host/${sample.id}/${sample.id}.chimeras_R1.fastq
+				# fi
+
+				seqtk subseq reads_decon_1.fastq pairs.txt | gzip -c - > no_host/${sample.id}/${sample.id}_R1.fastq.gz
+				if [[ -z "\$(zcat no_host/${sample.id}/${sample.id}_R1.fastq.gz | head -n 1)" ]]; then
+					seqtk subseq reads_decon_1.fastq <(sed "s:\$:/1:" pairs.txt) | gzip -c - >> no_host/${sample.id}/${sample.id}_R1.fastq.gz
+				fi
+				seqtk subseq reads_decon_2.fastq pairs.txt | gzip -c - > no_host/${sample.id}/${sample.id}_R2.fastq.gz
+				if [[ -z "\$(zcat no_host/${sample.id}/${sample.id}_R2.fastq.gz | head -n 1)" ]]; then
+					seqtk subseq reads_decon_2.fastq <(sed "s:\$:/2:" pairs.txt) | gzip -c - >> no_host/${sample.id}/${sample.id}_R2.fastq.gz
 				fi
 
-				seqtk subseq ${sample.id}_1.fastq pairs.txt | gzip -c - > no_host/${sample.id}/${sample.id}_R1.fastq.gz
-				seqtk subseq ${sample.id}_1.fastq <(sed "s:\$:/1:" pairs.txt) | gzip -c - >> no_host/${sample.id}/${sample.id}_R1.fastq.gz
-				seqtk subseq ${sample.id}_2.fastq pairs.txt | gzip -c - > no_host/${sample.id}/${sample.id}_R2.fastq.gz
-				seqtk subseq ${sample.id}_2.fastq <(sed "s:\$:/2:" pairs.txt) | gzip -c - >> no_host/${sample.id}/${sample.id}_R2.fastq.gz
-
-				rm -f ${sample.id}_1.fastq ${sample.id}_2.fastq
-				rm -f chimeras.txt pairs.txt union.txt
+				# rm -f reads_decon_1.fastq reads_decon_2.fastq
+				# rm -f chimeras.txt pairs.txt union.txt
 			fi
 			"""
 
 		} else {
 			postprocessing += """
-			if [[ -f ${sample.id}_1.fastq ]]; then
-				mv ${sample.id}_1.fastq no_host/${sample.id}/${sample.id}_R1.fastq
-				gzip no_host/${sample.id}/*.fastq
+			if [[ -f reads_decon_1.fastq ]]; then
+				mv reads_decon_1.fastq no_host/${sample.id}/${sample.id}_R1.fastq
+				gzip -v no_host/${sample.id}/*.fastq
 			fi	
 			"""
 
