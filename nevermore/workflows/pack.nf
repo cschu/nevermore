@@ -55,7 +55,7 @@ workflow nevermore_pack_reads {
 			}
 		.set { single_reads_ch }
 
-		def orphan_merge = !params.single_end_libraries && !params.drop_orphans && params.run_preprocessing && params.remove_host;
+		def orphan_merge = !params.single_end_libraries && !params.drop_orphans && params.run_preprocessing //&& params.remove_host;
 		def se_group_size = 2 - ((orphan_merge) ? 0 : 1);
 
 		single_reads_ch.paired_end
