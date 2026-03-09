@@ -55,7 +55,7 @@ workflow nevermore_pack_reads {
 			}
 		.set { single_reads_ch }
 
-		def orphan_merge = !params.single_end_libraries && !params.drop_orphans && params.run_preprocessing //&& params.remove_host;
+		def orphan_merge = !params.single_end_library && !params.drop_orphans && params.run_preprocessing //&& params.remove_host;
 		def se_group_size = 2 - ((orphan_merge) ? 0 : 1);
 
 		single_reads_ch.paired_end
@@ -84,7 +84,7 @@ workflow nevermore_pack_reads {
 		/*	then merge single-read file groups into single files */
 
 		merged_ch = Channel.empty()
-		if (!params.single_end_libraries) {
+		if (!params.single_end_library) {
 
 			merge_single_fastqs(merged_single_ch)
 			merged_ch = merge_single_fastqs.out.fastq
