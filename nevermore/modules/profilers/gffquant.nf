@@ -1,6 +1,6 @@
 params.gq_aligner = "bwa"
 params.gq_min_seqlen = params.min_alignment_length
-params.gq_single_end_library = params.single_end_library
+params.gq_single_end_library = params.single_end_libraries
 params.gq_min_identity = params.min_identity
 params.gq_mode = "genes"
 params.gq_ambig_mode = "1overN"
@@ -23,8 +23,8 @@ process stream_gffquant {
 		tuple val(sample), path("${sample}/*.{txt.gz,pd.txt}"), emit: profiles
 		tuple val(sample), path("logs/${sample}.log")
 		tuple val(sample), path("alignments/${sample}/${sample}*.sam"), emit: alignments, optional: true
-		path("${sample}"), emit: profile_dir
-		tuple val(sample), path("${sample}/${sample}.gene_ids.txt"), emit: gene_ids
+		//path("${sample}"), emit: profile_dir
+		tuple val(sample), path("${sample}/${sample}.gene_ids.txt.gz"), emit: gene_ids
 
 	script:
 			def gq_output = "-o ${sample}/${sample}"
@@ -77,7 +77,7 @@ process stream_gffquant {
 			GQ_DATABASE=\$(dirname \$(readlink ${gq_db}))/*sqlite3
 
 			${gq_cmd} --reference \$(readlink ${gq_db}) &> logs/${sample}.log
-			gzip -dc ${sample}/${sample}.gene_counts.txt.gz | cut -f 1 > ${sample}/${sample}.gene_ids.txt
+			gzip -dc ${sample}/${sample}.gene_counts.txt.gz | cut -f 1 | gzip -c - > ${sample}/${sample}.gene_ids.txt.gz
 			rm -rfv tmp/
 			"""
 
