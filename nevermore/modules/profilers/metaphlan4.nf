@@ -15,7 +15,7 @@ process run_metaphlan4 {
 	// tuple val(sample), path("${sample.id}.bowtie2.bz2"), emit: mp4_bt2
 	
 	script:
-	def mp4_params = "--bowtie2db ${mp4_db} --input_type fastq --nproc ${task.cpus} --tmp_dir tmp/"
+	def mp4_params = "--bowtie2db ${mp4_db} --input_type fastq --nproc ${task.cpus} --tmp_dir tmp/ --offline"
 	def mp4_input = ""
 	def bt2_out = "--bowtie2out ${sample.id}.bowtie2.bz2"
 
