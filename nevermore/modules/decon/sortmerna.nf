@@ -44,11 +44,28 @@ process sortmerna {
 		// 	mv_output = "mv -v work/out/other.fq.gz no_rrna/${sample.id}/${sample.id}_R1.fastq.gz"
 		// }
 
+		// --workdir work/ --idx-dir \$(dirname \$(readlink ${db}))/index/
+		// def index_dir = ""
+		// def prep_index_dir = ""
+		// def rm_index_dir = ""
+		// if (params.sortmerna_db_location_writeable) {
+		// 	prep_index_dir = "ln -s "
+		// }
+
 		"""
-		mkdir -p work/index/ no_rrna/${sample.id}/ rrna/${sample.id}/
-		sortmerna --fastx --aligned --other --threads ${task.cpus} -m ${mem_mb} --workdir work/ --idx-dir \$(dirname \$(readlink ${db}))/index/ ${reads} ${pe_params} --ref ${db}
+		mkdir -p work/ no_rrna/${sample.id}/ rrna/${sample.id}/
+
+		if [[ -d \$(dirname \$(readlink ${db}))/index/ ]]; then 
+			ln -sf \$(dirname \$(readlink ${db}))/index work/
+		else
+			mkdir -p work/index/
+		fi
+
+
+		sortmerna --fastx --aligned --other --threads ${task.cpus} -m ${mem_mb} --workdir work/ --idx-dir work/index ${reads} ${pe_params} --ref ${db}
 
 		${mv_output}
+		rm -rfv work
 		"""
 
 }

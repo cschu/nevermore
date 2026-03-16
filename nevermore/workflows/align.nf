@@ -48,7 +48,7 @@ workflow nevermore_align {
 			minimap_aligned_ch = minimap2_align.out.sam
 			.map { sample, sam ->
 				sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
-				return tuple(sample_id, sam)
+				return [ sample_id, sam ]
 			}
 			.groupTuple(sort: true)
 
@@ -57,7 +57,7 @@ workflow nevermore_align {
 				.map { sample_id, samfiles ->
 					def meta = [:]
 					meta.id = sample_id
-					return tuple(meta, samfiles)
+					return [ meta, samfiles ]
 			})
 
 			alignment_ch = alignment_ch
@@ -79,7 +79,7 @@ workflow nevermore_align {
 			aligned_ch = bwa_mem_align.out.bam
 				.map { sample, bam ->
 					sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
-					return tuple(sample_id, bam)
+					return [ sample_id, bam ]
 				}
 				.groupTuple(sort: true)
 
@@ -87,7 +87,7 @@ workflow nevermore_align {
 				.map { sample_id, bamfiles ->
 					def meta = [:]
 					meta.id = sample_id
-					return tuple(meta, bamfiles)
+					return [ meta, bamfiles ]
 				}, true)
 
 			alignment_ch = alignment_ch

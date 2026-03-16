@@ -34,7 +34,7 @@ workflow gffquant_flow {
 					.replaceAll(/\.pd\.txt$/, "")
 					.replaceAll(/\.txt\.gz$/, "")
 					.replaceAll(/.+\./, "")
-				return tuple(category, file)
+				return [ category, file ]
 			}
 			.groupTuple(sort: true)
 			.combine(
