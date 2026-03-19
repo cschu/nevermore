@@ -43,7 +43,7 @@ process prepare_fastqs {
 		tuple val(sample), path(files), val(remote_input), val(library_suffix)
 	output:
 		tuple val(sample), path("fastq/**.fastq.{gz,bz2}"), emit: pairs, optional: true
-		tuple val(sample), path("fastq/**.fastq.{gz,bz2}"), emit: singles, optional: true
+		tuple val(sample), path("fastq/**singles_R1.fastq.{gz,bz2}"), emit: singles, optional: true
 		path("sample_library_info.txt"), emit: library_info
 
   script:
