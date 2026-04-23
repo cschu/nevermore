@@ -1,6 +1,7 @@
 process sortmerna {
 	container "quay.io/biocontainers/sortmerna:4.3.6--h9ee0642_0"
 	label "medium"
+	tag "${sample.id}"
 
 	input:
 		tuple val(sample), path(fastqs)
@@ -8,6 +9,7 @@ process sortmerna {
 	output:
 		tuple val(sample), path("no_rrna/${sample.id}/*.fastq.gz"), emit: fastqs, optional: true
 		tuple val(sample), path("rrna/${sample.id}/*.fastq.gz"), emit: rrna_fastqs, optional: true
+		tuple val(sample), path("${sample.id}.SORTMERNA_DONE"), emit: done_sentinel
 	script:
 		def mem_mb = task.memory.toMega()
 
@@ -53,6 +55,8 @@ process sortmerna {
 		// }
 
 		"""
+		set -e -o pipefail
+
 		mkdir -p work/ no_rrna/${sample.id}/ rrna/${sample.id}/
 
 		if [[ -d \$(dirname \$(readlink ${db}))/index/ ]]; then 
@@ -66,6 +70,8 @@ process sortmerna {
 
 		${mv_output}
 		rm -rfv work
+
+		touch ${sample.id}.SORTMERNA_DONE
 		"""
 
 }

@@ -34,16 +34,15 @@ process transfer_bams {
 
 
 process prepare_fastqs {
-	// container "ghcr.io/astral-sh/uv:python3.14-trixie-slim"
-	// container "registry.git.embl.org/schudoma/portraits_metatraits:latest"
 	container "quay.io/biocontainers/pandas:2.2.1"
 	label "default"
+	tag "${sample}"
 
 	input:
 		tuple val(sample), path(files), val(remote_input), val(library_suffix)
 	output:
-		tuple val(sample), path("fastq/**.fastq.{gz,bz2}"), emit: pairs, optional: true
-		tuple val(sample), path("fastq/**singles_R1.fastq.{gz,bz2}"), emit: singles, optional: true
+		tuple val(sample), path("fastq/${sample}/*.fastq.{gz,bz2}"), emit: pairs, optional: true
+		tuple val(sample), path("fastq/${sample}.singles/*.fastq.{gz,bz2}"), emit: singles, optional: true
 		path("sample_library_info.txt"), emit: library_info
 
   script:
