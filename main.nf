@@ -22,8 +22,7 @@ if (params.input_dir && params.remote_input_dir) {
 }
 
 def input_dir = (params.input_dir) ? params.input_dir : params.remote_input_dir
-def do_alignment = params.run_gffquant || !params.skip_alignment
-def do_stream = params.gq_stream
+def do_alignment = !params.skip_alignment
 def do_preprocessing = (!params.skip_preprocessing || params.run_preprocessing)
 
 
@@ -45,7 +44,7 @@ workflow {
 	align_ch = Channel.empty()
 	counts_ch = nevermore_main.out.readcounts
 
-	if (!do_stream && do_alignment) {
+	if (do_alignment) {
 		nevermore_align(nevermore_main.out.fastqs)
 		align_ch = nevermore_align.out.alignments
 		counts_ch = counts_ch.mix(
@@ -60,22 +59,14 @@ workflow {
 	}
 
 	if (params.run_gffquant) {
-
-		if (params.gq_stream) {
-			gq_input_ch = nevermore_main.out.fastqs
-				.map { sample, fastqs ->
-				sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
-				return tuple(sample_id, [fastqs].flatten())
-			}
-			.groupTuple(size: 2, remainder: true)
-			.map { sample_id, fastqs -> return tuple(sample_id, [fastqs].flatten()) }
-			gq_input_ch.dump(pretty: true, tag: "gq_input_ch")
-
-		} else {
-
-			gq_input_ch = align_ch
-
+		gq_input_ch = nevermore_main.out.fastqs
+			.map { sample, fastqs ->
+			sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
+			return tuple(sample_id, [fastqs].flatten())
 		}
+		.groupTuple(size: 2, remainder: true)
+		.map { sample_id, fastqs -> return tuple(sample_id, [fastqs].flatten()) }
+		gq_input_ch.dump(pretty: true, tag: "gq_input_ch")
 
 		gffquant_flow(gq_input_ch)		
 

@@ -1,4 +1,4 @@
-include { stream_gffquant; run_gffquant; collate_feature_counts } from "../modules/profilers/gffquant"
+include { stream_gffquant as gffquant; collate_feature_counts } from "../modules/profilers/gffquant"
 
 params.gq_collate_columns = "uniq_scaled,combined_scaled"
 
@@ -10,16 +10,9 @@ workflow gffquant_flow {
 		input_ch
 
 	main:
-
-		if (params.gq_stream) {
-			stream_gffquant(input_ch) //, params.gffquant_db)
-			feature_count_ch = (params.gq_panda) ? stream_gffquant.out.profiles : stream_gffquant.out.results
-			counts = stream_gffquant.out.results
-		} else {
-			run_gffquant(input_ch, params.gffquant_db)
-			feature_count_ch = run_gffquant.out.results
-			counts = run_gffquant.out.results
-		}
+		gffquant(input_ch)
+		feature_count_ch = (params.gq_panda) ? gffquant.out.profiles : gffquant.out.results
+		counts = gffquant.out.results		
 
 		feature_count_ch = feature_count_ch
 			.map { sample, files -> return files }
