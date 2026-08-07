@@ -8,6 +8,7 @@ params.gq_restrict_metrics = "raw,lnorm,scaled,rpkm"
 
 
 process stream_gffquant {
+	container "ghcr.io/cschu/gff_quantifier:v2.18.5"
 	tag "gffquant.${sample}"
 	// publishDir "${params.output_dir}/profiles", mode: "copy", pattern: "*.{txt.gz,pd.txt}"
 	// publishDir "${params.output_dir}", mode: "copy", pattern: "logs/*.log"
@@ -15,8 +16,7 @@ process stream_gffquant {
 	label "large"
 
 	input:
-		tuple val(sample), path(fastqs)
-		path(gq_db)
+		tuple val(sample), path(fastqs), path(gq_db)
 
 	output:
 		tuple val(sample), path("${sample}/*.{txt.gz,pd.txt}"), emit: results
@@ -32,7 +32,7 @@ process stream_gffquant {
 			def gq_params = "-m ${params.gq_mode} --ambig_mode ${params.gq_ambig_mode}"
 			gq_params += (params.gq_min_seqlen) ? (" --min_seqlen " + params.gq_min_seqlen) : ""
 			gq_params += (params.gq_min_identity) ? (" --min_identity " + params.gq_min_identity) : ""
-			gq_params += (params.gq_gene_group_db) ? " --gene_group_db" : ""
+			gq_params += (params.gq_ggroup_db) ? " --gene_group_db" : ""
 			// LEGACY PARAMETERS, partially not implemented in newer gffquant
 			// gq_params += (params.gq_strand_specific) ? " --strand_specific" : ""
 			gq_params += (params.gq_restrict_metrics) ? " --restrict_metrics ${params.gq_restrict_metrics}" : ""
@@ -95,6 +95,7 @@ process stream_gffquant {
 }
 
 process run_gffquant {
+	container "ghcr.io/cschu/gff_quantifier:v2.18.5"
 	publishDir params.output_dir, mode: "copy"
 	label "gffquant"
 
