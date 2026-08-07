@@ -62,10 +62,10 @@ workflow {
 		gq_input_ch = nevermore_main.out.fastqs
 			.map { sample, fastqs ->
 			sample_id = sample.id.replaceAll(/.(orphans|singles|chimeras)$/, "")
-			return tuple(sample_id, [fastqs].flatten())
+			return [ sample_id, [fastqs].flatten() ]
 		}
 		.groupTuple(size: 2, remainder: true)
-		.map { sample_id, fastqs -> return tuple(sample_id, [fastqs].flatten()) }
+		.map { sample_id, fastqs -> [ sample_id, [fastqs].flatten(), params.gffquant_db ] }
 		gq_input_ch.dump(pretty: true, tag: "gq_input_ch")
 
 		gffquant_flow(gq_input_ch)		
