@@ -3,16 +3,16 @@ process kallisto_index {
 	label "medium"
 
 	input:
-	tuple val(sample), path(genes)
+	tuple val(sample), val(index_name), path(genes)
 
 	output:
-	tuple val(sample), path("kallisto/index/${sample.id}.idx"), emit: index
+	tuple val(sample), val(index_name), path("kallisto/index/${sample.id}.${index_name}.idx"), emit: index
 
 	script:
 	"""
 	mkdir -p kallisto/index/${sample.id}/
 
-	kallisto index -i kallisto/index/${sample.id}.idx ${genes}
+	kallisto index -i kallisto/index/${sample.id}.${index_name}.idx ${genes}
 	"""
 	
 }
@@ -26,10 +26,10 @@ process kallisto_quant {
 	label "medium"
 
 	input:
-	tuple val(sample), path(fastqs), path(kallisto_index)
+	tuple val(sample), val(index_name), path(fastqs), path(kallisto_index)
 
 	output:
-	tuple val(sample), path("kallisto/quant/${sample.id}/*"), emit: quant
+	tuple val(sample), val(index_name), path("kallisto/quant/${sample.id}.${index_name}/*"), emit: quant
 
 	script:
 
@@ -62,11 +62,11 @@ process kallisto_quant {
 	}
 
 	"""
-	mkdir -p kallisto/quant/${sample.id}/
+	mkdir -p kallisto/quant/${sample.id}.${index_name}/
 
 	${calc_libstats}
 
-	kallisto quant -i ${kallisto_index} -b ${params.profilers.kallisto.bootstrap} -o kallisto/quant/${sample.id} ${single_flags} ${input_files}
+	kallisto quant -i ${kallisto_index} -b ${params.profilers.kallisto.bootstrap} -o kallisto/quant/${sample.id}.${index_name} ${single_flags} ${input_files}
 	"""	
 	// salmon quant -p ${task.cpus} -i ${salmon_index} -l ${params.profilers.salmon.quant.libtype} ${input_files} --validateMappings -o salmon/quant/${sample.id}/
 	// ./bin/salmon quant -i transcripts_index -l <LIBTYPE> -1 reads1.fq -2 reads2.fq --validateMappings -o transcripts_quant

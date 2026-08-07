@@ -8,22 +8,19 @@ params.gq_restrict_metrics = "raw,lnorm,scaled,rpkm"
 
 
 process stream_gffquant {
+	container "ghcr.io/cschu/gff_quantifier:v0.20.0"
 	tag "gffquant.${sample}"
-	// publishDir "${params.output_dir}/profiles", mode: "copy", pattern: "*.{txt.gz,pd.txt}"
-	// publishDir "${params.output_dir}", mode: "copy", pattern: "logs/*.log"
 	label "gffquant"
 	label "large"
 
 	input:
-		tuple val(sample), path(fastqs)
-		path(gq_db)
+		tuple val(sample), path(fastqs), path(gq_db)
 
 	output:
 		tuple val(sample), path("${sample}/*.{txt.gz,pd.txt}"), emit: results
 		tuple val(sample), path("${sample}/*.{txt.gz,pd.txt}"), emit: profiles
 		tuple val(sample), path("logs/${sample}.log")
 		tuple val(sample), path("alignments/${sample}/${sample}*.sam"), emit: alignments, optional: true
-		//path("${sample}"), emit: profile_dir
 		tuple val(sample), path("${sample}/${sample}.gene_ids.txt.gz"), emit: gene_ids
 
 	script:
@@ -34,10 +31,7 @@ process stream_gffquant {
 			gq_params += (params.gq_min_identity) ? (" --min_identity " + params.gq_min_identity) : ""
 			gq_params += (params.gq_gene_group_db) ? " --gene_group_db" : ""
 			// LEGACY PARAMETERS, partially not implemented in newer gffquant
-			// gq_params += (params.gq_strand_specific) ? " --strand_specific" : ""
 			gq_params += (params.gq_restrict_metrics) ? " --restrict_metrics ${params.gq_restrict_metrics}" : ""
-			// gq_params += (params.gq_keep_alignments) ? " --keep_alignment_file ${sample}.sam" : ""
-			// gq_params += (params.gq_unmarked_orphans) ? " --unmarked_orphans" : ""
 			def mkdir_alignments = (params.keep_alignment_file != null && params.keep_alignment_file != false) ? "mkdir -p alignments/${sample}/" : ""
 
 			gq_params += " -t ${task.cpus}"
@@ -92,72 +86,6 @@ process stream_gffquant {
 			${db_clean}
 			"""
 
-}
-
-process run_gffquant {
-	publishDir params.output_dir, mode: "copy"
-	label "gffquant"
-
-	input:
-	tuple val(sample), path(alignments) //, path(readcounts)
-	path(gq_db)
-
-	output:
-	tuple val(sample), path("profiles/${sample.id}/*.txt.gz"), emit: results
-	tuple val(sample), path("logs/${sample.id}.log")
-
-	script:
-	def gq_output = "-o profiles/${sample.id}/${sample.id}"
-
-	def gq_params = "-m ${params.gq_mode} --ambig_mode ${params.gq_ambig_mode}"
-	gq_params += (params.gq_strand_specific) ? " --strand_specific" : ""
-	gq_params += (params.gq_unmarked_orphans) ? " --unmarked_orphans" : ""
-	gq_params += (params.gq_min_seqlen) ? (" --min_seqlen " + params.gq_min_seqlen) : ""
-	gq_params += (params.gq_min_identity) ? (" --min_identity " + params.gq_min_identity) : ""
-	// gq_params += (params.bam_input_pattern) ? " --import_readcounts \$(grep -o '[0-9]\\+' ${readcounts})" : ""
-	gq_params += (params.gq_restrict_metrics) ? " --restrict_metrics ${params.gq_restrict_metrics}" : ""
-	// gq_params += (params.bam_input_pattern || !params.large_reference) ? (" --bam") : " --format sam"
-	def formatted_input = (params.bam_input_pattern || !params.large_reference) ? "--bam ${alignments}" : "--sam ${alignments}"
-
-	def gq_dbformat = (params.gq_mode == "domain") ? "--db_coordinates ${params.gq_db_coordinates} --db_separator ${params.gq_db_separator}" : ""
-	def gq_cmd = "gffquant ${gq_output} ${gq_params} --db gq_db.sqlite3 ${gq_dbformat}"
-
-
-	def mk_aln_sam = ""
-	if (params.bam_input_pattern) {
-
-		if (params.do_name_sort) {
-			gq_cmd = "samtools collate -@ ${task.cpus} -O ${alignments} tmp/collated_bam | ${gq_cmd} --bam -"
-		} else {
-			gq_cmd = "${gq_cmd} ${formatted_input}"
-		}
-
-	} else if (params.large_reference) {
-
-		mk_aln_sam += "echo 'Making alignment stream...'\n"
-		if (alignments instanceof Collection && alignments.size() >= 2) {
-			mk_aln_sam += "cat ${sample.id}.sam > tmp/alignments.sam \n"
-			mk_aln_sam += "grep -v '^@' ${sample.id}.singles.sam >> tmp/alignments.sam"
-		} else {
-			mk_aln_sam += "ln -s ${alignments[0]} tmp/alignments.sam"
-		}
-		gq_cmd = "cat tmp/alignments.sam | ${gq_cmd} --sam -"
-
-	} else {
-
-		gq_cmd = "${gq_cmd} ${formatted_input}"
-
-	}
-
-	"""
-	set -e -o pipefail
-	mkdir -p logs/ tmp/ profiles/
-	echo 'Copying database...'
-	cp -v ${gq_db} gq_db.sqlite3
-	${mk_aln_sam}
-	${gq_cmd} &> logs/${sample.id}.log
-	rm -rfv gq_db.sqlite3* tmp/
-	"""
 }
 
 params.gq_collate_columns = "uniq_scaled,combined_scaled"

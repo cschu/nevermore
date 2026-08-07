@@ -6,8 +6,7 @@ include { bwa_mem_align } from "../modules/align/bwa"
 include { minimap2_align } from "../modules/align/minimap2"
 include { merge_and_sort; merge_sam } from "../modules/align/helpers"
 
-def do_alignment = params.run_gffquant || !params.skip_alignment
-def do_stream = params.gq_stream
+def do_alignment = !params.skip_alignment
 
 params.do_name_sort = true
 
