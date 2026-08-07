@@ -55,7 +55,7 @@ workflow nevermore_pack_reads {
 			}
 		.set { single_reads_ch }
 
-		def orphan_merge = !params.single_end_libraries && !params.drop_orphans && params.run_preprocessing //&& params.remove_host;
+		def orphan_merge = !params.single_end_libraries && !params.drop_orphans && (params.run_preprocessing || !params.skip_processing)
 		def se_group_size = 2 - ((orphan_merge) ? 0 : 1);
 
 		single_reads_ch.paired_end
@@ -66,11 +66,8 @@ workflow nevermore_pack_reads {
 			.set { pe_singles_ch }
 
 		merged_single_ch = pe_singles_ch.do_merge
-			// .map { meta, fastq -> [ meta.id, meta.library_source, fastq ] }
 			.map { meta, fastq -> [ meta.id, fastq ] }
-			// .groupTuple(by: [0, 1], sort: true, size: se_group_size, remainder: true)
 			.groupTuple(by: 0, sort: true, size: se_group_size, remainder: true)
-			// .map { sample_id, library_source, fastqs ->
 			.map { sample_id, fastqs ->
 				def meta = [:]
 				meta.id = sample_id
